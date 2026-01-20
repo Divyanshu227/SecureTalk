@@ -2,8 +2,6 @@ import pool from "../config/db.js";
 import jwt from "jsonwebtoken";
 
 export const initChatSocket = (io) => {
-
-  // 🔐 SOCKET AUTH MIDDLEWARE (JWT)
   io.use((socket, next) => {
     try {
       const token = socket.handshake.auth.token;
@@ -14,15 +12,13 @@ export const initChatSocket = (io) => {
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // attach user to socket
-      socket.user = decoded; // { id, email }
+      socket.user = decoded;
       next();
     } catch (err) {
       return next(new Error("Invalid authentication token"));
     }
   });
 
-  // 🔌 SOCKET CONNECTION
   io.on("connection", (socket) => {
     console.log(
       "Socket connected:",
@@ -31,7 +27,6 @@ export const initChatSocket = (io) => {
       socket.user.id
     );
 
-    // ✅ JOIN CHAT ROOM
     socket.on("join_chat", (chatId) => {
       socket.join(chatId);
       console.log(
@@ -39,23 +34,20 @@ export const initChatSocket = (io) => {
       );
     });
 
-    // ✅ SEND MESSAGE (SECURE)
     socket.on("send_message", async (data) => {
       try {
         const { chatId, content } = data;
-        const senderId = socket.user.id; // 🔒 derived from JWT
+        const senderId = socket.user.id;
 
         if (!chatId || !content) {
           return;
         }
 
-        // store message in DB
         await pool.query(
           "INSERT INTO messages (chat_id, sender_id, content) VALUES ($1,$2,$3)",
           [chatId, senderId, content]
         );
 
-        // emit message to all users in chat room
         io.to(chatId).emit("receive_message", {
           chatId,
           senderId,
@@ -67,7 +59,6 @@ export const initChatSocket = (io) => {
       }
     });
 
-    // 🔌 DISCONNECT
     socket.on("disconnect", () => {
       console.log(
         "Socket disconnected:",
