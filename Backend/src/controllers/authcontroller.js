@@ -10,7 +10,6 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Missing fields" });
     }
 
-    // check existing user
     const existing = await pool.query(
       "SELECT id FROM users WHERE email=$1",
       [email]
