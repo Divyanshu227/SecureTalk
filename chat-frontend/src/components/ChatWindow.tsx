@@ -124,6 +124,7 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
     try {
       // Send via API to persist the message
       const newMsg = await sendMessage(chat.id, messageText);
+      console.log("✅ Message sent and saved:", newMsg);
 
       // Update local state immediately with the API response
       setMessages((prev) => [...prev, newMsg]);
@@ -132,6 +133,15 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
 
       // Broadcast to other users via socket for real-time delivery
       if (socket && isConnected) {
+        console.log("📤 Emitting message_persisted to server:", {
+          chatId: chat.id,
+          messageData: {
+            id: newMsg.id,
+            senderId: newMsg.senderId,
+            content: newMsg.content,
+            created_at: newMsg.created_at,
+          },
+        });
         socket.emit("message_persisted", {
           chatId: chat.id,
           messageData: {

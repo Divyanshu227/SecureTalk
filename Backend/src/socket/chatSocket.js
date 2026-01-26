@@ -28,9 +28,10 @@ export const initChatSocket = (io) => {
     );
 
     socket.on("join_chat", (chatId) => {
-      socket.join(chatId);
+      const roomId = String(chatId);
+      socket.join(roomId);
       console.log(
-        `User ${socket.user.id} joined chat ${chatId}`
+        `✅ User ${socket.user.id} joined chat room: ${roomId}`
       );
     });
 
@@ -40,7 +41,10 @@ export const initChatSocket = (io) => {
       try {
         const { chatId, messageData } = data;
 
+        console.log("📨 Received message_persisted event:", { chatId, messageData });
+
         if (!chatId || !messageData) {
+          console.log("⚠️ Invalid message_persisted data");
           return;
         }
 
@@ -54,18 +58,20 @@ export const initChatSocket = (io) => {
         };
 
         // Broadcast to users in the specific chat room
+        console.log(`📤 Broadcasting to chat room: ${chatId}`);
         io.to(String(chatId)).emit("receive_message", messageEvent);
 
         // Also broadcast to all connected users for sidebar updates
+        console.log("📢 Broadcasting to all users for sidebar update");
         io.emit("message_update", {
           ...messageEvent,
           type: "new_message"
         });
 
-        console.log(`Message from user ${messageData.senderId} broadcast to chat ${chatId}`);
+        console.log(`✅ Message from user ${messageData.senderId} broadcast to chat ${chatId}`);
 
       } catch (err) {
-        console.error("MESSAGE PERSISTENCE ERROR:", err.message);
+        console.error("❌ MESSAGE PERSISTENCE ERROR:", err.message);
       }
     });
 
@@ -92,10 +98,18 @@ export const initChatSocket = (io) => {
 
     socket.on("disconnect", () => {
       console.log(
-        "Socket disconnected:",
+        "❌ Socket disconnected:",
         socket.id,
         "User:",
         socket.user.id
+      );
+    });
+
+    socket.on("leave_chat", (chatId) => {
+      const roomId = String(chatId);
+      socket.leave(roomId);
+      console.log(
+        `User ${socket.user.id} left chat room: ${roomId}`
       );
     });
   });

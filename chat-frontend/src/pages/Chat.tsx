@@ -20,10 +20,12 @@ const Chat = () => {
 
   const loadChats = async () => {
     try {
+      console.log("Loading chats...");
       const data = await fetchChats();
+      console.log("Chats loaded:", data);
       setChats(data);
     } catch (err) {
-      console.error("Failed to load chats");
+      console.error("Failed to load chats", err);
     }
   };
 
@@ -50,27 +52,21 @@ const Chat = () => {
       return;
     }
 
-    console.log("Setting up message listeners");
-
-    // Listen for chat-specific messages
-    const handleMessageReceived = (data: any) => {
-      console.log("ChatWindow message received:", data);
-    };
+    console.log("✅ Setting up message listeners on Chat page");
 
     // Listen for sidebar updates - global message updates
     const handleMessageUpdate = (data: any) => {
-      console.log("Chat page - message update event:", data);
+      console.log("💬 Chat page - message_update event received:", data);
       // Refresh chats to update last message and timestamps
       loadChats();
     };
 
-    socket.on("receive_message", handleMessageReceived);
     socket.on("message_update", handleMessageUpdate);
+    console.log("Registered for message_update events");
 
     return () => {
-      socket.off("receive_message", handleMessageReceived);
       socket.off("message_update", handleMessageUpdate);
-      console.log("Message listeners cleaned up");
+      console.log("Message update listener cleaned up");
     };
   }, [socket, isConnected]);
 
