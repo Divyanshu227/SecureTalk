@@ -26,6 +26,8 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
+    console.log("Establishing socket connection...");
+
     // Create socket connection
     const newSocket = io("http://localhost:5000", {
       auth: {
@@ -34,28 +36,40 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
       transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: Infinity,
+      query: {
+        token: token,
+      },
     });
 
     newSocket.on("connect", () => {
-      console.log("Socket connected");
+      console.log("✅ Socket connected:", newSocket.id);
       setIsConnected(true);
     });
 
-    newSocket.on("disconnect", () => {
-      console.log("Socket disconnected");
+    newSocket.on("disconnect", (reason) => {
+      console.log("❌ Socket disconnected. Reason:", reason);
       setIsConnected(false);
     });
 
     newSocket.on("connect_error", (error) => {
-      console.error("Socket connection error:", error);
+      console.error("❌ Socket connection error:", error);
       setIsConnected(false);
+    });
+
+    // Debug: log all events
+    newSocket.onAny((eventName, ...args) => {
+      if (eventName !== "receive_message" && eventName !== "message_update") {
+        console.log(`📨 Socket event: ${eventName}`, args);
+      }
     });
 
     socketRef.current = newSocket;
     setSocket(newSocket);
 
     return () => {
+      console.log("Cleaning up socket connection");
       newSocket.disconnect();
       setSocket(null);
       setIsConnected(false);

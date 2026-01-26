@@ -34,24 +34,55 @@ export const initChatSocket = (io) => {
       );
     });
 
-    socket.on("send_message", async (data) => {
+    // Listen for message persistence confirmation from backend
+    // When REST API saves a message, frontend will emit this
+    socket.on("message_persisted", (data) => {
+      try {
+        const { chatId, messageData } = data;
+
+        if (!chatId || !messageData) {
+          return;
+        }
+
+        const messageEvent = {
+          chatId,
+          senderId: messageData.senderId,
+          content: messageData.content,
+          id: messageData.id,
+          created_at: messageData.created_at,
+          timestamp: messageData.created_at,
+        };
+
+        // Broadcast to users in the specific chat room
+        io.to(String(chatId)).emit("receive_message", messageEvent);
+
+        // Also broadcast to all connected users for sidebar updates
+        io.emit("message_update", {
+          ...messageEvent,
+          type: "new_message"
+        });
+
+        console.log(`Message from user ${messageData.senderId} broadcast to chat ${chatId}`);
+
+      } catch (err) {
+        console.error("MESSAGE PERSISTENCE ERROR:", err.message);
+      }
+    });
+
+    socket.on("send_message", (data) => {
+      // Legacy support - can be removed once frontend fully uses message_persisted
       try {
         const { chatId, content } = data;
-        const senderId = socket.user.id;
 
         if (!chatId || !content) {
           return;
         }
 
-        await pool.query(
-          "INSERT INTO messages (chat_id, sender_id, content) VALUES ($1,$2,$3)",
-          [chatId, senderId, content]
-        );
-
         io.to(chatId).emit("receive_message", {
           chatId,
-          senderId,
+          senderId: socket.user.id,
           content,
+          timestamp: new Date().toISOString(),
         });
 
       } catch (err) {

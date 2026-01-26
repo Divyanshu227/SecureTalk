@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import type { Chat, Message } from "../types";
 import {
   fetchMessages,
@@ -22,17 +22,17 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const lastChatIdRef = useRef<number | null>(null);
-  const wasConnectedRef = useRef(false);
 
   const { user } = useAuth();
   const { socket, isConnected } = useSocket();
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const scrollToBottom = useCallback(() => {
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 0);
+  }, []);
 
-  const loadMessages = async () => {
+  const loadMessages = useCallback(async () => {
     if (!chat) {
       setMessages([]);
       return;
@@ -40,98 +40,111 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
     setLoading(true);
     try {
       const data = await fetchMessages(chat.id);
-      setMessages(data);
-      setTimeout(scrollToBottom, 100);
+      // Ensure messages are sorted by timestamp
+      const sortedMessages = [...data].sort((a, b) => {
+        const timeA = new Date(a.created_at || 0).getTime();
+        const timeB = new Date(b.created_at || 0).getTime();
+        return timeA - timeB;
+      });
+      setMessages(sortedMessages);
+      scrollToBottom();
     } catch (error) {
       console.error("Failed to load messages", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [chat, scrollToBottom]);
 
+  // Load messages when chat changes
   useEffect(() => {
     loadMessages();
-  }, [chat?.id]);
+  }, [chat?.id, loadMessages]);
 
-  // Join chat room when chat changes or socket reconnects
+  // Join chat room and listen for messages
   useEffect(() => {
-    if (socket && chat && isConnected) {
-      socket.emit("join_chat", String(chat.id));
-      
-      // Reload messages only on reconnect (when wasConnected was false and now is true)
-      // or when chat changes
-      const chatChanged = lastChatIdRef.current !== chat.id;
-      const reconnected = !wasConnectedRef.current && isConnected;
-      
-      if (chatChanged || reconnected) {
-        loadMessages();
-        lastChatIdRef.current = chat.id;
-      }
-      
-      wasConnectedRef.current = isConnected;
-    } else if (!isConnected) {
-      wasConnectedRef.current = false;
+    if (!socket || !chat) {
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [socket, chat?.id, isConnected]);
 
-  // Listen for real-time messages from all users
-  useEffect(() => {
-    if (!socket || !chat) return;
+    // Join the chat room
+    socket.emit("join_chat", String(chat.id));
+    console.log("Joined chat", chat.id);
 
-    const handleReceiveMessage = (data: { chatId: number; senderId: number; content: string }) => {
+    // Listen for incoming messages from other users in real-time
+    const handleReceiveMessage = (data: { 
+      chatId: number; 
+      senderId: number; 
+      content: string;
+      timestamp?: string;
+      created_at?: string;
+      id?: number;
+    }) => {
+      console.log("Received message event:", data);
+      
       if (data.chatId !== chat.id) return;
 
-      // Reload messages to get the complete list with proper IDs from backend
-      // This handles both messages from other users and our own messages sent via socket
-      loadMessages();
+      // Add message to UI immediately without reloading
+      const newMessage: Message = {
+        id: data.id || Date.now(),
+        senderId: data.senderId,
+        content: data.content,
+        created_at: data.created_at || data.timestamp,
+      };
+
+      setMessages((prev) => {
+        // Check if message already exists (don't add duplicates)
+        if (prev.some(msg => msg.id === newMessage.id)) {
+          return prev;
+        }
+        return [...prev, newMessage];
+      });
+      
+      // Scroll to bottom after state update
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 0);
     };
 
     socket.on("receive_message", handleReceiveMessage);
+    console.log("Socket listener registered for chat", chat.id);
 
     return () => {
       socket.off("receive_message", handleReceiveMessage);
+      console.log("Socket listener removed for chat", chat.id);
+      socket.emit("leave_chat", String(chat.id));
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, chat?.id]);
 
-  // Auto-scroll when messages change
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages.length]);
-
   const handleSend = async () => {
-    if (!text.trim() || !chat || !user) return;
+    if (!text.trim() || !chat) return;
 
     const messageText = text.trim();
     setText("");
 
     try {
-      // Send message via API (primary method - ensures persistence)
-      const msg = await sendMessage(chat.id, messageText);
+      // Send via API to persist the message
+      const newMsg = await sendMessage(chat.id, messageText);
 
-      // Also emit via socket for real-time delivery to other users
+      // Update local state immediately with the API response
+      setMessages((prev) => [...prev, newMsg]);
+      onMessageSent?.();
+      scrollToBottom();
+
+      // Broadcast to other users via socket for real-time delivery
       if (socket && isConnected) {
-        socket.emit("send_message", {
+        socket.emit("message_persisted", {
           chatId: chat.id,
-          content: messageText,
+          messageData: {
+            id: newMsg.id,
+            senderId: newMsg.senderId,
+            content: newMsg.content,
+            created_at: newMsg.created_at,
+          },
         });
       }
-
-      // Update UI with the message from API response
-      // This ensures we have the correct ID and timestamp from backend
-      setMessages((prev) => {
-        // Check if this exact message already exists to avoid duplicates
-        const exists = prev.some((m) => m.id === msg.id);
-        if (exists) return prev;
-        return [...prev, msg];
-      });
-
-      onMessageSent?.();
-      setTimeout(scrollToBottom, 100);
     } catch (error) {
       console.error("Failed to send message", error);
-      setText(messageText); // Restore text on error
+      setText(messageText);
     }
   };
 
@@ -189,41 +202,45 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
         ) : (
           <>
             {messages.map((msg) => {
-              const isSent = msg.senderId === user?.id || Number(msg.senderId) === user?.id;
+              // Normalize IDs to numbers for consistent comparison
+              const senderId = Number(msg.senderId);
+              const currentUserId = Number(user?.id);
+              const isSent = senderId === currentUserId;
+              
               return (
-              <div
-                key={msg.id}
-                className={`message ${isSent ? "sent" : "received"}`}
-              >
-                <div className="message-bubble">
-                  <div className="message-content">{msg.content}</div>
-                  <div className="message-time">
-                    {new Date(msg.created_at || "").toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                <div
+                  key={msg.id}
+                  className={`message ${isSent ? "sent" : "received"}`}
+                >
+                  <div className="message-bubble">
+                    <div className="message-content">{msg.content}</div>
+                    <div className="message-time">
+                      {new Date(msg.created_at || "").toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </div>
                   </div>
+                  {isSent && (
+                    <div className="message-actions">
+                      <button
+                        className="secondary"
+                        onClick={() => {
+                          setEditingId(msg.id);
+                          setEditText(msg.content);
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="danger"
+                        onClick={() => handleDelete(msg.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
-                {isSent && (
-                  <div className="message-actions">
-                    <button
-                      className="secondary"
-                      onClick={() => {
-                        setEditingId(msg.id);
-                        setEditText(msg.content);
-                      }}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="danger"
-                      onClick={() => handleDelete(msg.id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </div>
               );
             })}
             <div ref={messagesEndRef} />

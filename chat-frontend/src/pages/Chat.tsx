@@ -5,6 +5,7 @@ import ChatList from "../components/ChatList.tsx";
 import ChatWindow from "../components/ChatWindow.tsx";
 import ThemeToggle from "../components/ThemeToggle";
 import { useAuth } from "../auth/AuthContext";
+import { useSocket } from "../contexts/SocketContext";
 import { useNavigate } from "react-router-dom";
 
 const Chat = () => {
@@ -14,6 +15,7 @@ const Chat = () => {
   const [users, setUsers] = useState<{ id: number; name: string; email: string }[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const { logout } = useAuth();
+  const { socket, isConnected } = useSocket();
   const navigate = useNavigate();
 
   const loadChats = async () => {
@@ -40,6 +42,37 @@ const Chat = () => {
   useEffect(() => {
     loadChats();
   }, []);
+
+  // Listen for messages to refresh chat list in real-time
+  useEffect(() => {
+    if (!socket || !isConnected) {
+      console.log("Socket not ready:", { socket: !!socket, isConnected });
+      return;
+    }
+
+    console.log("Setting up message listeners");
+
+    // Listen for chat-specific messages
+    const handleMessageReceived = (data: any) => {
+      console.log("ChatWindow message received:", data);
+    };
+
+    // Listen for sidebar updates - global message updates
+    const handleMessageUpdate = (data: any) => {
+      console.log("Chat page - message update event:", data);
+      // Refresh chats to update last message and timestamps
+      loadChats();
+    };
+
+    socket.on("receive_message", handleMessageReceived);
+    socket.on("message_update", handleMessageUpdate);
+
+    return () => {
+      socket.off("receive_message", handleMessageReceived);
+      socket.off("message_update", handleMessageUpdate);
+      console.log("Message listeners cleaned up");
+    };
+  }, [socket, isConnected]);
 
   const handleNewChat = async (userId: number) => {
     try {
