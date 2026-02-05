@@ -62,11 +62,8 @@ export const initChatSocket = (io) => {
         io.to(String(chatId)).emit("receive_message", messageEvent);
 
         // Also broadcast to all connected users for sidebar updates
-        console.log("📢 Broadcasting to all users for sidebar update");
-        io.emit("message_update", {
-          ...messageEvent,
-          type: "new_message"
-        });
+        console.log("📢 Broadcasting message_update to ALL users");
+        io.emit("message_update", messageEvent);
 
         console.log(`✅ Message from user ${messageData.senderId} broadcast to chat ${chatId}`);
 

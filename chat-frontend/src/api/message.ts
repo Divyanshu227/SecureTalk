@@ -1,6 +1,6 @@
 import api from "./axios";
 import type { Message } from "../types";
-
+// exp
 export const fetchMessages = async (chatId: number): Promise<Message[]> => {
   const res = await api.get<Message[]>(`/chats/${chatId}/messages`);
   return res.data;

@@ -1,9 +1,10 @@
 import pool from "../config/db.js";
-
+// This is used for creating chats and fetching chat data.
 export const createChat = async (req, res) => {
   const { otherUserId } = req.body;
 
   const existingChat = await pool.query(
+    // Check if a chat already exists between the two users
     `
     SELECT c.id FROM chats c
     JOIN chat_members cm1 ON c.id = cm1.chat_id AND cm1.user_id = $1
@@ -21,7 +22,7 @@ export const createChat = async (req, res) => {
   );
 
   const chatId = chatRes.rows[0].id;
-
+// Add both users to the chat_members table
   await pool.query(
     "INSERT INTO chat_members (chat_id, user_id) VALUES ($1,$2), ($1,$3)",
     [chatId, req.user.id, otherUserId]
@@ -29,7 +30,7 @@ export const createChat = async (req, res) => {
 
   res.json({ chatId });
 };
-
+// this fetches all chats for the authenticated user along with the last message and other user's info
 export const getChats = async (req, res) => {
   const result = await pool.query(
     `
@@ -48,7 +49,7 @@ export const getChats = async (req, res) => {
     `,
     [req.user.id]
   );
-
+// explanation: This query retrieves all chats for the authenticated user (req.user.id). It joins the chats with chat_members to find chats involving the user and fetches the other user's details. It also retrieves the last message and its timestamp for each chat, ordering the results by the most recent message.
   const chats = result.rows.map(row => ({
     id: row.id,
     lastMessage: row.last_message,

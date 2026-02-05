@@ -45,6 +45,18 @@ const Chat = () => {
     loadChats();
   }, []);
 
+  // Refresh chat list when active chat changes (to get updated last message)
+  useEffect(() => {
+    if (activeChat) {
+      // Small delay to ensure any messages have been saved
+      const timer = setTimeout(() => {
+        console.log("Active chat changed - reloading chat list");
+        loadChats();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [activeChat?.id]);
+
   // Listen for messages to refresh chat list in real-time
   useEffect(() => {
     if (!socket || !isConnected) {
@@ -52,17 +64,16 @@ const Chat = () => {
       return;
     }
 
-    console.log("✅ Setting up message listeners on Chat page");
+    console.log("✅ [Chat.tsx] Listening for message_update");
 
     // Listen for sidebar updates - global message updates
     const handleMessageUpdate = (data: any) => {
-      console.log("💬 Chat page - message_update event received:", data);
+      console.log("📨 [Chat.tsx] message_update event - reloading sidebar");
       // Refresh chats to update last message and timestamps
       loadChats();
     };
 
     socket.on("message_update", handleMessageUpdate);
-    console.log("Registered for message_update events");
 
     return () => {
       socket.off("message_update", handleMessageUpdate);

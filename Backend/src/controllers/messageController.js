@@ -1,10 +1,11 @@
 import pool from "../config/db.js";
-
+// This is used for sending, fetching, editing, and deleting messages.
 export const sendMessage = async (req, res) => {
   const { chatId } = req.params;
   const { content } = req.body;
-
+// explanation: This function handles sending a new message in a specific chat. It inserts the message into the messages table with the chat ID, sender ID (from the authenticated user), and content.
   try {
+    console.log(chatId, req.user.id, content);
     const result = await pool.query(
       "INSERT INTO messages (chat_id, sender_id, content) VALUES ($1,$2,$3) RETURNING id, chat_id, sender_id as senderId, content, created_at, updated_at",
       [chatId, req.user.id, content]
@@ -16,9 +17,10 @@ export const sendMessage = async (req, res) => {
     res.status(500).json({ message: "Failed to send message" });
   }
 };
-
+// explanation: This function retrieves all messages for a specific chat, marking each message as sent or received based on the authenticated user's ID.
 export const getMessages = async (req, res) => {
   const { chatId } = req.params;
+  const currentUserId = req.user.id;
 
   try {
     const result = await pool.query(
@@ -29,13 +31,22 @@ export const getMessages = async (req, res) => {
         sender_id as senderId, 
         content, 
         created_at,
-        updated_at
+        updated_at,
+        CASE 
+          WHEN sender_id = $2 THEN true 
+          ELSE false 
+        END as isSent
       FROM messages
       WHERE chat_id = $1
       ORDER BY created_at ASC, id ASC
       `,
-      [chatId]
+      [chatId, currentUserId]
     );
+
+    console.log(`📨 Retrieved ${result.rows.length} messages for chat ${chatId}`);
+    result.rows.forEach(msg => {
+      console.log(`   - Message ${msg.id}: ${msg.isSent ? "SENT" : "RECEIVED"}, Content="${msg.content.substring(0, 30)}..."`);
+    });
 
     res.json(result.rows);
   } catch (error) {

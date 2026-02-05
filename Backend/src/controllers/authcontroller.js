@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import pool from "../config/db.js";
-
+// This is used for registrering users, logging in, and fetching user data.
 export const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -32,7 +32,7 @@ export const register = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
+// login function to authenticate users and provide JWT tokens
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -66,7 +66,7 @@ export const login = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
+// getMe function to retrieve the authenticated user's information
 export const getMe = async (req, res) => {
   try {
     const result = await pool.query(
@@ -85,7 +85,7 @@ export const getMe = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
+// getAllUsers function to fetch a list of all users except the authenticated user
 export const getAllUsers = async (req, res) => {
   try {
     const result = await pool.query(

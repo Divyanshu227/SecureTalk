@@ -133,15 +133,11 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
 
       // Broadcast to other users via socket for real-time delivery
       if (socket && isConnected) {
-        console.log("📤 Emitting message_persisted to server:", {
-          chatId: chat.id,
-          messageData: {
-            id: newMsg.id,
-            senderId: newMsg.senderId,
-            content: newMsg.content,
-            created_at: newMsg.created_at,
-          },
-        });
+        console.log("📤 [ChatWindow] ABOUT TO emit message_persisted");
+        console.log("   Socket ID:", socket.id);
+        console.log("   Chat ID:", chat.id);
+        console.log("   Message ID:", newMsg.id);
+        
         socket.emit("message_persisted", {
           chatId: chat.id,
           messageData: {
@@ -151,6 +147,10 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
             created_at: newMsg.created_at,
           },
         });
+        
+        console.log("✅ [ChatWindow] message_persisted event emitted");
+      } else {
+        console.warn("⚠️ Socket not ready:", { socket: !!socket, isConnected });
       }
     } catch (error) {
       console.error("Failed to send message", error);
@@ -211,16 +211,26 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
           <div className="chat-empty">No messages yet. Start the conversation!</div>
         ) : (
           <>
+            {/* Messages array is already sorted by timestamp (oldest first) */}
+            {/* Each message includes isSent flag from database */}
             {messages.map((msg) => {
-              // Normalize IDs to numbers for consistent comparison
-              const senderId = Number(msg.senderId);
-              const currentUserId = Number(user?.id);
-              const isSent = senderId === currentUserId;
+              // Database has already computed isSent:
+              // isSent = true if sender_id equals current user id (RHS - right side)
+              // isSent = false if sender_id is different (LHS - left side)
+              const isSent = msg.isSent ?? (Number(msg.senderId) === Number(user?.id));
               
+              // Log for debugging to verify the logic
+              console.log(`Message ${msg.id}: ${isSent ? "SENT (RHS)" : "RECEIVED (LHS)"}, Content="${msg.content.substring(0, 20)}..."`);
+              
+              // Render message with appropriate styling
+              // CSS class "sent" positions on right, "received" positions on left
               return (
                 <div
                   key={msg.id}
                   className={`message ${isSent ? "sent" : "received"}`}
+                  style={{
+                    justifyContent: isSent ? "flex-end" : "flex-start",
+                  }}
                 >
                   <div className="message-bubble">
                     <div className="message-content">{msg.content}</div>
@@ -231,6 +241,7 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
                       })}
                     </div>
                   </div>
+                  {/* Only show edit/delete buttons for messages sent by current user */}
                   {isSent && (
                     <div className="message-actions">
                       <button
