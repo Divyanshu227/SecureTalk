@@ -303,6 +303,45 @@ npm start          # Start production
 - Loading states managed
 - Responsive design patterns
 
+## 🚀 Deployment
+
+This is a **monorepo** with separate Backend and Frontend. Deploy them independently:
+
+### Backend Deployment (Railway, Heroku, etc.)
+
+1. Deploy the `Backend/` directory as a Node.js application
+2. Set environment variables:
+   - `DATABASE_URL`: PostgreSQL connection string (or use `PG_HOST`, `PG_PORT`, `PG_USER`, `PG_PASSWORD`, `PG_DATABASE`)
+   - `JWT_SECRET`: Secret key for JWT signing
+   - `PORT`: (optional, defaults to 5000)
+
+3. Uses `Procfile` and `start.sh` for automatic platform recognition
+
+### Frontend Deployment (Vercel, Netlify, etc.)
+
+1. Deploy the `chat-frontend/` directory as a Vite app
+2. Set environment variables:
+   - `VITE_API_BASE_URL`: Backend API URL (e.g., `https://your-backend.railway.app`)
+
+3. Build command: `npm run build`
+4. Start command: `npm run dev` or serve `dist/`
+
+### Local Development
+
+**Backend:**
+```bash
+cd Backend
+npm install
+npm run dev
+```
+
+**Frontend:**
+```bash
+cd chat-frontend
+npm install
+npm run dev
+```
+
 ## 🤝 Contributing
 
 This is a complete implementation. To extend:
@@ -355,7 +394,7 @@ Thank you for using this chat application. We hope you enjoy the experience and 
 ---
 
 **Version**: 1.0.0  
-**Last Updated**: January 2026  
+**Last Updated**: February 2026  
 **Status**: Production Ready ✅
 
 Start chatting now! 💬
