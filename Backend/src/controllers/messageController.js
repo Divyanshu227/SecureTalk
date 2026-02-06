@@ -25,20 +25,19 @@ export const sendMessage = async (req, res) => {
     const receiverId = req.user.id === userid1 ? userid2 : userid1;
 
     const insertRes = await pool.query(
-      "INSERT INTO messages (chat_id, sender_id, content) VALUES ($1,$2,$3) RETURNING id, chat_id, sender_id as senderId, content, created_at, updated_at",
-      [chatId, req.user.id, content]
+      "INSERT INTO messages (chatid, senderid,receiverid, content) VALUES ($1,$2,$3,$4) RETURNING messageid, chatid as chat_id, senderid as senderId, content, created_at",
+      [chatId, req.user.id, receiverId, content]
     );
 
     const inserted = insertRes.rows[0];
     // Augment response with computed receiverId and isSent flag
     res.json({
-      id: inserted.id,
+      id: inserted.messageid,
       chatId: inserted.chat_id,
       senderId: inserted.senderId,
       receiverId,
       content: inserted.content,
       created_at: inserted.created_at,
-      updated_at: inserted.updated_at,
       isSent: true,
     });
   } catch (error) {
@@ -50,31 +49,45 @@ export const sendMessage = async (req, res) => {
 export const getMessages = async (req, res) => {
   const { chatId } = req.params;
   const currentUserId = req.user.id;
-
+  const othersUserId = req.query.otherUserId; 
+  console.log("chatId:", chatId, typeof chatId);
+console.log("currentUserId:", currentUserId, typeof currentUserId);
+console.log("req.user:", req.user);
+// Optional: can be used for additional validation if needed
   try {
     const result = await pool.query(
-      `
-      SELECT 
-        m.id,
-        m.chat_id,
-        m.sender_id as senderId,
-        -- compute receiver based on chat participants
-        CASE WHEN m.sender_id = c.userid1 THEN c.userid2 ELSE c.userid1 END as receiverId,
-        m.content,
-        m.created_at,
-        m.updated_at,
-        CASE WHEN m.sender_id = $2 THEN true ELSE false END as isSent
+      // `
+      // SELECT 
+      //   m.id,
+      //   m.chat_id,
+      //   m.sender_id as senderId,
+      //   -- compute receiver based on chat participants
+      //   CASE WHEN m.sender_id = c.userid1 THEN c.userid2 ELSE c.userid1 END as receiverId,
+      //   m.content,
+      //   m.created_at,
+      //   m.updated_at,
+      //   CASE WHEN m.sender_id = $2 THEN true ELSE false END as isSent
+      // FROM messages m
+      // JOIN chat c ON m.chat_id = c.chatid
+      // WHERE m.chat_id = $1
+      // ORDER BY m.created_at ASC, m.id ASC
+      // `,
+      // [chatId, currentUserId]
+    `SELECT m.messageid,
+            m.chatid as chat_id,
+            m.senderid as senderId,
+            CASE WHEN m.senderid = $2 THEN true ELSE false END as isSent,
+            m.content,
+            m.created_at
       FROM messages m
-      JOIN chat c ON m.chat_id = c.chatid
-      WHERE m.chat_id = $1
-      ORDER BY m.created_at ASC, m.id ASC
-      `,
+      WHERE m.chatid = $1
+      ORDER BY m.created_at ASC, m.messageid ASC`,
       [chatId, currentUserId]
     );
-
+    console.log("Raw DB result:", result.rows);
     console.log(`📨 Retrieved ${result.rows.length} messages for chat ${chatId}`);
     result.rows.forEach(msg => {
-      console.log(`   - Message ${msg.id}: ${msg.isSent ? "SENT" : "RECEIVED"}, Content="${msg.content.substring(0, 30)}..."`);
+      console.log(`   - Message ${msg.messageid}: ${msg.issent ? "SENT" : "RECEIVED"}, Content="${msg.content.substring(0, 30)}..."`);
     });
 
     res.json(result.rows);
@@ -102,10 +115,10 @@ export const editMessage = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    const result = await pool.query(
-      "UPDATE messages SET content = $1, updated_at = NOW() WHERE id = $2 AND chat_id = $3 RETURNING id, sender_id as senderId, content, created_at, updated_at",
-      [content, messageId, chatId]
-    );
+    // const result = await pool.query(
+    //   "UPDATE messages SET content = $1, updated_at = NOW() WHERE id = $2 AND chat_id = $3 RETURNING id, sender_id as senderId, content, created_at, updated_at",
+    //   [content, messageId, chatId]
+    // );
 
     res.json(result.rows[0]);
   } catch (error) {
