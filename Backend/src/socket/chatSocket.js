@@ -40,6 +40,7 @@ export const initChatSocket = (io) => {
         const messageEvent = {
           chatId,
           senderId: messageData.senderId,
+          receiverId: messageData.receiverId,
           content: messageData.content,
           id: messageData.id,
           created_at: messageData.created_at,

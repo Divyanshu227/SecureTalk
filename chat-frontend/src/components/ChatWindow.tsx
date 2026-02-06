@@ -71,9 +71,9 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
     console.log("Joined chat", chat.id);
 
     // Listen for incoming messages from other users in real-time
-    const handleReceiveMessage = (data: { 
-      chatId: number; 
-      senderId: number; 
+    const handleReceiveMessage = (data: {
+      chatId: number;
+      senderId: number;
       receiverId: number;
       content: string;
       timestamp?: string;
@@ -81,14 +81,16 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
       id?: number;
     }) => {
       console.log("Received message event:", data);
-      
-      if (data.chatId !== chat.id) return;
+
+      if (Number(data.chatId) !== Number(chat.id)) return;
 
       // Add message to UI immediately without reloading
+      const isMyMessage = Number(data.senderId) === Number(user?.id);
+
       const newMessage: Message = {
         id: data.id || Date.now(),
         senderId: data.senderId,
-        receiverId: chat.otherUser.id,
+        receiverId: isMyMessage ? chat.otherUser.id : (user?.id || 0),
         content: data.content,
         created_at: data.created_at || data.timestamp,
       };
@@ -100,7 +102,7 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
         }
         return [...prev, newMessage];
       });
-      
+
       // Scroll to bottom after state update
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -131,7 +133,7 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
       // Update local state immediately with the API response
       // loadMessages(); // Refresh messages to get the persisted message with ID and timestamp
       // prev- parameter
-      
+
       setMessages((prev) => [...prev, newMsg]);
 
       onMessageSent?.();
@@ -143,7 +145,7 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
         console.log("   Socket ID:", socket.id);
         console.log("   Chat ID:", chat.id);
         console.log("   Message ID:", newMsg.id);
-        
+
         socket.emit("message_persisted", {
           chatId: chat.id,
           messageData: {
@@ -154,7 +156,7 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
             created_at: newMsg.created_at,
           },
         });
-        
+
         console.log("✅ [ChatWindow] message_persisted event emitted");
       } else {
         console.warn("⚠️ Socket not ready:", { socket: !!socket, isConnected });
@@ -227,10 +229,10 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
               console.log(`Message ${msg.id} from sender ${msg.senderId} (current user ${user?.id}) isSent flag: ${msg.issent}`);
               console.log(msg);
               const isSent = msg.issent ?? (Number(msg.senderId) === Number(user?.id));
-              
+
               // Log for debugging to verify the logic
               console.log(`Message ${msg.id}: ${isSent ? "SENT (RHS)" : "RECEIVED (LHS)"}, Content="${msg.content.substring(0, 20)}..."`);
-              
+
               // Render message with appropriate styling
               // CSS class "sent" positions on right, "received" positions on left
               return (
