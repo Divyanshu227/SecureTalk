@@ -87,6 +87,7 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
       const newMessage: Message = {
         id: data.id || Date.now(),
         senderId: data.senderId,
+        receiverId: chat.otherUser.id,
         content: data.content,
         created_at: data.created_at || data.timestamp,
       };
@@ -143,6 +144,7 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
           messageData: {
             id: newMsg.id,
             senderId: newMsg.senderId,
+            receiverId: chat.otherUser.id,
             content: newMsg.content,
             created_at: newMsg.created_at,
           },
@@ -217,7 +219,7 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
               // Database has already computed isSent:
               // isSent = true if sender_id equals current user id (RHS - right side)
               // isSent = false if sender_id is different (LHS - left side)
-              const isSent = msg.isSent ?? (Number(msg.senderId) === Number(user?.id));
+              const isSent = msg.issent ?? (Number(msg.senderId) === Number(user?.id));
               
               // Log for debugging to verify the logic
               console.log(`Message ${msg.id}: ${isSent ? "SENT (RHS)" : "RECEIVED (LHS)"}, Content="${msg.content.substring(0, 20)}..."`);

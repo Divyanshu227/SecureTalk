@@ -6,12 +6,41 @@ export const sendMessage = async (req, res) => {
 // explanation: This function handles sending a new message in a specific chat. It inserts the message into the messages table with the chat ID, sender ID (from the authenticated user), and content.
   try {
     console.log(chatId, req.user.id, content);
-    const result = await pool.query(
+
+    // Fetch chat participants so we can determine the receiver
+    const chatRes = await pool.query(
+      "SELECT userid1, userid2 FROM chat WHERE chatid = $1",
+      [chatId]
+    );
+
+    if (chatRes.rowCount === 0) {
+      return res.status(404).json({ message: "Chat not found" });
+    }
+
+    const { userid1, userid2 } = chatRes.rows[0];
+    if (req.user.id !== userid1 && req.user.id !== userid2) {
+      return res.status(403).json({ message: "User not in this chat" });
+    }
+
+    const receiverId = req.user.id === userid1 ? userid2 : userid1;
+
+    const insertRes = await pool.query(
       "INSERT INTO messages (chat_id, sender_id, content) VALUES ($1,$2,$3) RETURNING id, chat_id, sender_id as senderId, content, created_at, updated_at",
       [chatId, req.user.id, content]
     );
 
-    res.json(result.rows[0]);
+    const inserted = insertRes.rows[0];
+    // Augment response with computed receiverId and isSent flag
+    res.json({
+      id: inserted.id,
+      chatId: inserted.chat_id,
+      senderId: inserted.senderId,
+      receiverId,
+      content: inserted.content,
+      created_at: inserted.created_at,
+      updated_at: inserted.updated_at,
+      isSent: true,
+    });
   } catch (error) {
     console.error("Send message error:", error);
     res.status(500).json({ message: "Failed to send message" });
@@ -26,19 +55,19 @@ export const getMessages = async (req, res) => {
     const result = await pool.query(
       `
       SELECT 
-        id, 
-        chat_id, 
-        sender_id as senderId, 
-        content, 
-        created_at,
-        updated_at,
-        CASE 
-          WHEN sender_id = $2 THEN true 
-          ELSE false 
-        END as isSent
-      FROM messages
-      WHERE chat_id = $1
-      ORDER BY created_at ASC, id ASC
+        m.id,
+        m.chat_id,
+        m.sender_id as senderId,
+        -- compute receiver based on chat participants
+        CASE WHEN m.sender_id = c.userid1 THEN c.userid2 ELSE c.userid1 END as receiverId,
+        m.content,
+        m.created_at,
+        m.updated_at,
+        CASE WHEN m.sender_id = $2 THEN true ELSE false END as isSent
+      FROM messages m
+      JOIN chat c ON m.chat_id = c.chatid
+      WHERE m.chat_id = $1
+      ORDER BY m.created_at ASC, m.id ASC
       `,
       [chatId, currentUserId]
     );
