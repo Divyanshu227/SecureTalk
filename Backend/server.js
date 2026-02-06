@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import app from "./src/app.js";
 import pool from "./src/config/db.js";
 import authMiddleware from "./src/middleware/authMiddleware.js";
@@ -13,12 +16,10 @@ const io = new Server(server, {
 });
 initChatSocket(io);
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
-
   socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
+    // socket disconnected
   });
 });
 server.listen(process.env.PORT || 5000, () => {
-  console.log(`🚀 Server running on port ${process.env.PORT || 5000}`);
+  // Server started
 });

@@ -20,19 +20,11 @@ export const initChatSocket = (io) => {
   });
 
   io.on("connection", (socket) => {
-    console.log(
-      "Socket connected:",
-      socket.id,
-      "User:",
-      socket.user.id
-    );
+    // socket connected
 
     socket.on("join_chat", (chatId) => {
       const roomId = String(chatId);
       socket.join(roomId);
-      console.log(
-        `✅ User ${socket.user.id} joined chat room: ${roomId}`
-      );
     });
 
     // Listen for message persistence confirmation from backend
@@ -41,10 +33,7 @@ export const initChatSocket = (io) => {
       try {
         const { chatId, messageData } = data;
 
-        console.log("📨 Received message_persisted event:", { chatId, messageData });
-
         if (!chatId || !messageData) {
-          console.log("⚠️ Invalid message_persisted data");
           return;
         }
 
@@ -57,15 +46,9 @@ export const initChatSocket = (io) => {
           timestamp: messageData.created_at,
         };
 
-        // Broadcast to users in the specific chat room
-        console.log(`📤 Broadcasting to chat room: ${chatId}`);
         io.to(String(chatId)).emit("receive_message", messageEvent);
-
         // Also broadcast to all connected users for sidebar updates
-        console.log("📢 Broadcasting message_update to ALL users");
         io.emit("message_update", messageEvent);
-
-        console.log(`✅ Message from user ${messageData.senderId} broadcast to chat ${chatId}`);
 
       } catch (err) {
         console.error("❌ MESSAGE PERSISTENCE ERROR:", err.message);
@@ -94,20 +77,12 @@ export const initChatSocket = (io) => {
     });
 
     socket.on("disconnect", () => {
-      console.log(
-        "❌ Socket disconnected:",
-        socket.id,
-        "User:",
-        socket.user.id
-      );
+      // socket disconnected
     });
 
     socket.on("leave_chat", (chatId) => {
       const roomId = String(chatId);
       socket.leave(roomId);
-      console.log(
-        `User ${socket.user.id} left chat room: ${roomId}`
-      );
     });
   });
 };

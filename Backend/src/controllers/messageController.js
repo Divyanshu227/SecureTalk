@@ -5,7 +5,6 @@ export const sendMessage = async (req, res) => {
   const { content } = req.body;
 // explanation: This function handles sending a new message in a specific chat. It inserts the message into the messages table with the chat ID, sender ID (from the authenticated user), and content.
   try {
-    console.log(chatId, req.user.id, content);
 
     // Fetch chat participants so we can determine the receiver
     const chatRes = await pool.query(
@@ -30,8 +29,7 @@ export const sendMessage = async (req, res) => {
     );
 
     const inserted = insertRes.rows[0];
-    // Debug: show raw DB row
-    console.log("Inserted message row:", inserted);
+    // Inserted row (debug removed)
 
     // Build response using known variables (avoid relying on DB camelCase aliases)
     res.json({
@@ -43,7 +41,6 @@ export const sendMessage = async (req, res) => {
       created_at: inserted.created_at,
       isSent: true,
     });
-    console.log("Message sent:", inserted);
   } catch (error) {
     console.error("Send message error:", error);
     res.status(500).json({ message: "Failed to send message" });
@@ -53,10 +50,7 @@ export const sendMessage = async (req, res) => {
 export const getMessages = async (req, res) => {
   const { chatId } = req.params;
   const currentUserId = req.user.id;
-  const othersUserId = req.query.otherUserId; 
-  console.log("chatId:", chatId, typeof chatId);
-console.log("currentUserId:", currentUserId, typeof currentUserId);
-console.log("req.user:", req.user);
+  const othersUserId = req.query.otherUserId;
 // Optional: can be used for additional validation if needed
   try {
     const result = await pool.query(
@@ -88,11 +82,7 @@ console.log("req.user:", req.user);
       ORDER BY m.created_at ASC, m.messageid ASC`,
       [chatId, currentUserId]
     );
-    // console.log("Raw DB result:", result.rows);
-    // console.log(`📨 Retrieved ${result.rows.length} messages for chat ${chatId}`);
-    result.rows.forEach(msg => {
-      console.log(`   - Message ${msg.messageid}: ${msg.issent ? "SENT" : "RECEIVED"}, Content="${msg.content.substring(0, 30)}..."`);
-    });
+    // debug logging removed
 
     res.json(result.rows);
   } catch (error) {
