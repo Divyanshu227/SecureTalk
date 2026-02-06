@@ -74,6 +74,7 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
     const handleReceiveMessage = (data: { 
       chatId: number; 
       senderId: number; 
+      receiverId: number;
       content: string;
       timestamp?: string;
       created_at?: string;
@@ -128,7 +129,11 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
       console.log("✅ Message sent and saved:", newMsg);
 
       // Update local state immediately with the API response
+      // loadMessages(); // Refresh messages to get the persisted message with ID and timestamp
+      // prev- parameter
+      
       setMessages((prev) => [...prev, newMsg]);
+
       onMessageSent?.();
       scrollToBottom();
 
@@ -219,6 +224,8 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
               // Database has already computed isSent:
               // isSent = true if sender_id equals current user id (RHS - right side)
               // isSent = false if sender_id is different (LHS - left side)
+              console.log(`Message ${msg.id} from sender ${msg.senderId} (current user ${user?.id}) isSent flag: ${msg.issent}`);
+              console.log(msg);
               const isSent = msg.issent ?? (Number(msg.senderId) === Number(user?.id));
               
               // Log for debugging to verify the logic

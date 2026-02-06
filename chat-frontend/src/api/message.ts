@@ -13,6 +13,7 @@ export const sendMessage = async (
   const res = await api.post<Message>(`/chats/${chatId}/messages`, {
     content,
   });
+  console.log("Message sent:", res.data);
   return res.data;
 };
 

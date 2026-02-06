@@ -30,16 +30,20 @@ export const sendMessage = async (req, res) => {
     );
 
     const inserted = insertRes.rows[0];
-    // Augment response with computed receiverId and isSent flag
+    // Debug: show raw DB row
+    console.log("Inserted message row:", inserted);
+
+    // Build response using known variables (avoid relying on DB camelCase aliases)
     res.json({
       id: inserted.messageid,
       chatId: inserted.chat_id,
-      senderId: inserted.senderId,
-      receiverId,
+      senderId: req.user.id,
+      receiverId: receiverId,
       content: inserted.content,
       created_at: inserted.created_at,
       isSent: true,
     });
+    console.log("Message sent:", inserted);
   } catch (error) {
     console.error("Send message error:", error);
     res.status(500).json({ message: "Failed to send message" });
@@ -84,8 +88,8 @@ console.log("req.user:", req.user);
       ORDER BY m.created_at ASC, m.messageid ASC`,
       [chatId, currentUserId]
     );
-    console.log("Raw DB result:", result.rows);
-    console.log(`📨 Retrieved ${result.rows.length} messages for chat ${chatId}`);
+    // console.log("Raw DB result:", result.rows);
+    // console.log(`📨 Retrieved ${result.rows.length} messages for chat ${chatId}`);
     result.rows.forEach(msg => {
       console.log(`   - Message ${msg.messageid}: ${msg.issent ? "SENT" : "RECEIVED"}, Content="${msg.content.substring(0, 30)}..."`);
     });
