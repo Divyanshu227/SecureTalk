@@ -67,7 +67,7 @@ const Chat = () => {
     console.log("✅ [Chat.tsx] Listening for message_update");
 
     // Listen for sidebar updates - global message updates
-    const handleMessageUpdate = (data: any) => {
+    const handleMessageUpdate = () => {
       console.log("📨 [Chat.tsx] message_update event - reloading sidebar");
       // Refresh chats to update last message and timestamps
       loadChats();
