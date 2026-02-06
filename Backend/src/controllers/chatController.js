@@ -12,7 +12,7 @@ export const createChat = async (req, res) => {
   );
 
   if (existingChat.rowCount > 0) {
-    return res.json({ chatId: existingChat.rows[0].id });
+    return res.json({ chatId: existingChat.rows[0].chatid });
   }
 
   const chatRes = await pool.query(
@@ -21,7 +21,7 @@ export const createChat = async (req, res) => {
   );
 
   const chatId = chatRes.rows[0].chatid;
-// Add both users to the chat_members table
+  // Add both users to the chat_members table
   // await pool.query(
   //   "INSERT INTO chat_members (chat_id, user_id) VALUES ($1,$2), ($1,$3)",
   //   [chatId, req.user.id, otherUserId]
@@ -60,7 +60,7 @@ export const getChats = async (req, res) => {
     // [req.user.id]
 
   );
-// explanation: This query retrieves all chats for the authenticated user (req.user.id). It joins the chats with chat_members to find chats involving the user and fetches the other user's details. It also retrieves the last message and its timestamp for each chat, ordering the results by the most recent message.
+  // explanation: This query retrieves all chats for the authenticated user (req.user.id). It joins the chats with chat_members to find chats involving the user and fetches the other user's details. It also retrieves the last message and its timestamp for each chat, ordering the results by the most recent message.
   const chats = result.rows.map(row => ({
     id: row.id,
     lastMessage: row.last_message,

@@ -67,8 +67,10 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
     }
 
     // Join the chat room
-    socket.emit("join_chat", String(chat.id));
-    console.log("Joined chat", chat.id);
+    if (isConnected) {
+      socket.emit("join_chat", String(chat.id));
+      console.log("Joined chat (re-emit)", chat.id);
+    }
 
     // Listen for incoming messages from other users in real-time
     const handleReceiveMessage = (data: {
@@ -117,7 +119,7 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
       console.log("Socket listener removed for chat", chat.id);
       socket.emit("leave_chat", String(chat.id));
     };
-  }, [socket, chat?.id]);
+  }, [socket, chat?.id, isConnected]);
 
   const handleSend = async () => {
     if (!text.trim() || !chat) return;
