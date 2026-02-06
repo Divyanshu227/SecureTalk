@@ -71,7 +71,7 @@ export const getMessages = async (req, res) => {
       // ORDER BY m.created_at ASC, m.id ASC
       // `,
       // [chatId, currentUserId]
-    `SELECT m.messageid,
+    `SELECT m.messageid as id,
             m.chatid as chat_id,
             m.senderid as senderId,
             CASE WHEN m.senderid = $2 THEN true ELSE false END as isSent,
@@ -97,7 +97,7 @@ export const editMessage = async (req, res) => {
 
   try {
     const msgCheck = await pool.query(
-      "SELECT sender_id FROM messages WHERE id = $1 AND chat_id = $2",
+      "SELECT senderid FROM messages WHERE messageid = $1 AND chatid = $2",
       [messageId, chatId]
     );
 
@@ -105,14 +105,14 @@ export const editMessage = async (req, res) => {
       return res.status(404).json({ message: "Message not found" });
     }
 
-    if (msgCheck.rows[0].sender_id !== req.user.id) {
+    if (msgCheck.rows[0].senderid !== req.user.id) {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    // const result = await pool.query(
-    //   "UPDATE messages SET content = $1, updated_at = NOW() WHERE id = $2 AND chat_id = $3 RETURNING id, sender_id as senderId, content, created_at, updated_at",
-    //   [content, messageId, chatId]
-    // );
+    const result = await pool.query(
+      "UPDATE messages SET content = $1 WHERE messageid = $2 AND chatid = $3 RETURNING messageid as id, senderid as senderId, content, created_at",
+      [content, messageId, chatId]
+    );
 
     res.json(result.rows[0]);
   } catch (error) {
@@ -126,7 +126,7 @@ export const deleteMessage = async (req, res) => {
 
   try {
     const msgCheck = await pool.query(
-      "SELECT sender_id FROM messages WHERE id = $1 AND chat_id = $2",
+      "SELECT senderid FROM messages WHERE messageid = $1 AND chatid = $2",
       [messageId, chatId]
     );
 
@@ -134,11 +134,11 @@ export const deleteMessage = async (req, res) => {
       return res.status(404).json({ message: "Message not found" });
     }
 
-    if (msgCheck.rows[0].sender_id !== req.user.id) {
+    if (msgCheck.rows[0].senderid !== req.user.id) {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    await pool.query("DELETE FROM messages WHERE id = $1 AND chat_id = $2", [
+    await pool.query("DELETE FROM messages WHERE messageid = $1 AND chatid = $2", [
       messageId,
       chatId,
     ]);
