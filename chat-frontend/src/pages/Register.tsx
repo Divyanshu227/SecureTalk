@@ -2,6 +2,14 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { registerUser } from "../api/auth";
 
+type ApiError = {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+};
+
 const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -22,8 +30,9 @@ const Register = () => {
       await registerUser(name, email, password);
       setSuccess("Registration successful! Redirecting to login...");
       setTimeout(() => navigate("/login"), 2000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Registration failed");
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
+      setError(apiError.response?.data?.message || "Registration failed");
     } finally {
       setLoading(false);
     }
