@@ -20,8 +20,10 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     if (!token) {
       if (socketRef.current) {
         socketRef.current.disconnect();
-        setSocket(null);
-        setIsConnected(false);
+        queueMicrotask(() => {
+          setSocket(null);
+          setIsConnected(false);
+        });
       }
       return;
     }
