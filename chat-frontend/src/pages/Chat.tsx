@@ -34,7 +34,7 @@ const Chat = () => {
     try {
       const data = await fetchUsers();
       setUsers(data);
-    } catch (err) {
+    } catch {
       console.error("Failed to load users");
     } finally {
       setLoadingUsers(false);
@@ -90,7 +90,7 @@ const Chat = () => {
       if (newChat) {
         setActiveChat(newChat);
       }
-    } catch (err) {
+    } catch {
       console.error("Failed to create chat");
     }
   };
