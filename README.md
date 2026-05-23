@@ -102,32 +102,25 @@ Chatapp/
 ```sql
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
-  name VARCHAR(255),
-  email VARCHAR(255) UNIQUE NOT NULL,
-  password VARCHAR(255) NOT NULL,
+  name VARCHAR(100),
+  email VARCHAR(100),
+  password VARCHAR(100),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE chats (
-  id SERIAL PRIMARY KEY,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE chat_members (
-  id SERIAL PRIMARY KEY,
-  chat_id INTEGER REFERENCES chats(id) ON DELETE CASCADE,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(chat_id, user_id)
+CREATE TABLE chat (
+  chatid SERIAL PRIMARY KEY,
+  userid1 INTEGER REFERENCES users(id),
+  userid2 INTEGER REFERENCES users(id)
 );
 
 CREATE TABLE messages (
-  id SERIAL PRIMARY KEY,
-  chat_id INTEGER REFERENCES chats(id) ON DELETE CASCADE,
-  sender_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  content TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  messageid SERIAL PRIMARY KEY,
+  chatid INTEGER REFERENCES chat(chatid),
+  senderid INTEGER REFERENCES users(id),
+  receiverid INTEGER REFERENCES users(id),
+  content TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
