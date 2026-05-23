@@ -160,6 +160,20 @@ Frontend runs on: `http://localhost:5173`
 4. Send, edit, and delete messages
 5. Enjoy!
 
+## CI/CD
+
+This project includes a GitHub Actions workflow at `.github/workflows/ci-cd.yml`.
+
+The pipeline runs on pull requests and pushes to `main` or `master`:
+- Backend: `npm ci`, JavaScript syntax checks, and a high-severity production dependency audit
+- Frontend: `npm ci`, `npm run lint`, and `npm run build`
+
+Deployment runs only after CI passes on `main` or `master`. Add these repository secrets if you want GitHub Actions to trigger your hosting provider deploy hooks:
+- `BACKEND_DEPLOY_HOOK`
+- `FRONTEND_DEPLOY_HOOK`
+
+If either secret is missing, that deploy step is skipped without failing the workflow.
+
 ## 📚 API Documentation
 
 ### Authentication Endpoints
