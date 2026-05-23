@@ -1,68 +1,44 @@
+@import url("https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;700&family=Share+Tech+Mono&display=swap");
+
 :root {
-  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  font-family: "Oxanium", "Share Tech Mono", monospace;
   line-height: 1.5;
   font-weight: 400;
 }
 
-/* Cyberpunk Neon Theme (Default) */
+/* Robotic Black + Blue Theme */
 :root,
-[data-theme="light"] {
-  --bg-primary: #0a0e27;
-  --bg-secondary: #16213e;
-  --bg-tertiary: #0f3460;
-  --bg-gradient: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
-  --text-primary: #00ff88;
-  --text-secondary: #00d4ff;
-  --text-tertiary: #00a8cc;
-  --text-inverse: #0a0e27;
-  --border-color: #00ff88;
-  --border-hover: #00d4ff;
-  --shadow-sm: 0 0 10px rgba(0, 255, 136, 0.3);
-  --shadow-md: 0 0 20px rgba(0, 255, 136, 0.5);
-  --shadow-lg: 0 0 40px rgba(0, 212, 255, 0.6);
-  --message-sent-bg: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
-  --message-received-bg: linear-gradient(135deg, #ff006e 0%, #8338ec 100%);
-  --message-sent-text: #0a0e27;
-  --message-received-text: #ffffff;
-  --input-bg: #16213e;
-  --input-border: #00ff88;
-  --button-primary: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
-  --button-secondary-bg: #16213e;
-  --button-secondary-text: #00ff88;
-  --button-danger: #ff006e;
-  --scrollbar-track: #0f3460;
-  --scrollbar-thumb: #00ff88;
-  --scrollbar-thumb-hover: #00d4ff;
-}
-
-/* Dark Theme Variables */
+[data-theme="light"],
 [data-theme="dark"] {
-  --bg-primary: #050a1a;
-  --bg-secondary: #0d1b3a;
-  --bg-tertiary: #0a1f4d;
-  --bg-gradient: linear-gradient(135deg, #ff006e 0%, #8338ec 100%);
-  --text-primary: #ff006e;
-  --text-secondary: #8338ec;
-  --text-tertiary: #3a86ff;
-  --text-inverse: #ffffff;
-  --border-color: #ff006e;
-  --border-hover: #8338ec;
-  --shadow-sm: 0 0 10px rgba(255, 0, 110, 0.3);
-  --shadow-md: 0 0 20px rgba(255, 0, 110, 0.5);
-  --shadow-lg: 0 0 40px rgba(131, 56, 236, 0.6);
-  --message-sent-bg: linear-gradient(135deg, #ff006e 0%, #8338ec 100%);
-  --message-received-bg: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
-  --message-sent-text: #ffffff;
-  --message-received-text: #050a1a;
-  --input-bg: #0d1b3a;
-  --input-border: #ff006e;
-  --button-primary: linear-gradient(135deg, #ff006e 0%, #8338ec 100%);
-  --button-secondary-bg: #0d1b3a;
-  --button-secondary-text: #ff006e;
-  --button-danger: #00ff88;
-  --scrollbar-track: #0a1f4d;
-  --scrollbar-thumb: #ff006e;
-  --scrollbar-thumb-hover: #8338ec;
+  --bg-primary: #06080f;
+  --bg-secondary: #0b1220;
+  --bg-tertiary: #101a2e;
+  --bg-elevated: #0e1526;
+  --bg-gradient: linear-gradient(135deg, #0b1020 0%, #0a1b2e 50%, #081526 100%);
+  --text-primary: #e6f1ff;
+  --text-secondary: #7aa7ff;
+  --text-tertiary: #5b7bb5;
+  --text-inverse: #0b1020;
+  --accent: #2a7cff;
+  --accent-2: #4bd9ff;
+  --border-color: #1f355c;
+  --border-hover: #2a4a7f;
+  --shadow-sm: 0 0 10px rgba(58, 163, 255, 0.18);
+  --shadow-md: 0 0 20px rgba(58, 163, 255, 0.28);
+  --shadow-lg: 0 0 40px rgba(58, 163, 255, 0.45);
+  --message-sent-bg: linear-gradient(135deg, #0e2a52 0%, #1b4d8f 100%);
+  --message-received-bg: linear-gradient(135deg, #0a1628 0%, #10233f 100%);
+  --message-sent-text: #e6f1ff;
+  --message-received-text: #cfe4ff;
+  --input-bg: #0b1324;
+  --input-border: #1f355c;
+  --button-primary: linear-gradient(135deg, #2a7cff 0%, #4bd9ff 100%);
+  --button-secondary-bg: #0b1220;
+  --button-secondary-text: #cfe4ff;
+  --button-danger: #ff3b6b;
+  --scrollbar-track: #0a1222;
+  --scrollbar-thumb: #2a7cff;
+  --scrollbar-thumb-hover: #4bd9ff;
 }
 
 * {
@@ -73,13 +49,16 @@
 
 body {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0a2540 0%, #0d4a5c 25%, #1a5f4a 50%, #0f3d4d 75%, #051428 100%);
+  background:
+    radial-gradient(circle at 20% 10%, rgba(58, 163, 255, 0.12), transparent 45%),
+    radial-gradient(circle at 80% 80%, rgba(75, 217, 255, 0.08), transparent 40%),
+    var(--bg-gradient);
   background-attachment: fixed;
   color: var(--text-primary);
   transition: background-color 0.3s ease, color 0.3s ease;
   position: relative;
   overflow-x: hidden;
-  box-shadow: inset 0 0 300px rgba(0, 102, 153, 0.2), inset 0 0 150px rgba(0, 153, 102, 0.15);
+  box-shadow: inset 0 0 240px rgba(15, 60, 120, 0.35), inset 0 0 120px rgba(10, 30, 60, 0.6);
 }
 
 body::before {
@@ -89,18 +68,13 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: 
-    repeating-linear-gradient(
-      0deg,
-      rgba(0, 255, 136, 0.03) 0px,
-      rgba(0, 255, 136, 0.03) 1px,
-      transparent 1px,
-      transparent 2px
-    );
+  background-image:
+    linear-gradient(90deg, rgba(43, 126, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(43, 126, 255, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
   pointer-events: none;
   z-index: -1;
-  animation: scanlines 8s linear infinite;
-  background: radial-gradient(circle at 50% 50%, rgba(0, 204, 255, 0.05) 0%, transparent 100%);
+  animation: scanlines 10s linear infinite;
 }
 
 @keyframes scanlines {
@@ -122,7 +96,7 @@ a {
   text-decoration: none;
   font-weight: 500;
   transition: all 0.3s ease;
-  text-shadow: 0 0 10px var(--text-secondary);
+  text-shadow: 0 0 10px rgba(58, 163, 255, 0.35);
 }
 
 a:hover {
@@ -147,9 +121,9 @@ input[type="text"] {
   transition: all 0.3s ease;
   background: var(--input-bg);
   color: var(--text-primary);
-  font-family: 'IBM Plex Mono', monospace;
-  text-shadow: 0 0 10px var(--text-primary);
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+  font-family: "Share Tech Mono", monospace;
+  text-shadow: 0 0 10px rgba(58, 163, 255, 0.15);
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.65);
 }
 
 input[type="email"]:focus,
@@ -157,8 +131,8 @@ input[type="password"]:focus,
 input[type="text"]:focus {
   outline: none;
   border-color: var(--text-secondary);
-  box-shadow: 0 0 20px var(--text-primary), inset 0 0 10px rgba(0, 0, 0, 0.5);
-  text-shadow: 0 0 15px var(--text-primary);
+  box-shadow: 0 0 18px rgba(58, 163, 255, 0.35), inset 0 0 10px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 0 12px rgba(58, 163, 255, 0.35);
 }
 
 button {
@@ -169,18 +143,18 @@ button {
   color: var(--text-inverse);
   cursor: pointer;
   font-weight: 600;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: "Share Tech Mono", monospace;
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 1px;
   font-size: 0.85em;
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 20px rgba(58, 163, 255, 0.35), inset 0 0 20px rgba(255, 255, 255, 0.08);
 }
 
 button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 0 30px var(--text-primary), inset 0 0 20px rgba(255, 255, 255, 0.2);
-  text-shadow: 0 0 10px var(--text-primary);
+  box-shadow: 0 0 30px rgba(58, 163, 255, 0.55), inset 0 0 20px rgba(255, 255, 255, 0.15);
+  text-shadow: 0 0 10px rgba(58, 163, 255, 0.55);
 }
 
 button:disabled {
@@ -224,13 +198,13 @@ button.danger:hover {
   transition: all 0.3s ease;
   cursor: pointer;
   font-size: 1.2em;
-  box-shadow: 0 0 15px var(--text-primary);
+  box-shadow: 0 0 15px rgba(58, 163, 255, 0.35);
 }
 
 .theme-toggle:hover {
-  background: rgba(0, 255, 136, 0.1);
+  background: rgba(42, 124, 255, 0.12);
   transform: scale(1.1);
-  box-shadow: 0 0 25px var(--text-primary);
+  box-shadow: 0 0 25px rgba(58, 163, 255, 0.6);
 }
 
 /* Auth Pages */
@@ -250,6 +224,7 @@ button.danger:hover {
   width: 100%;
   max-width: 400px;
   transition: background-color 0.3s ease;
+  border: 1px solid var(--border-color);
 }
 
 .auth-form h2 {
@@ -315,7 +290,7 @@ button.danger:hover {
   overflow: hidden;
   transition: background-color 0.3s ease;
   border: 2px solid var(--border-color);
-  box-shadow: 0 0 50px var(--text-primary);
+  box-shadow: 0 0 50px rgba(58, 163, 255, 0.25);
 }
 
 .chat-sidebar {
@@ -325,25 +300,25 @@ button.danger:hover {
   flex-direction: column;
   background: var(--bg-primary);
   transition: background-color 0.3s ease, border-color 0.3s ease;
-  box-shadow: 2px 0 20px rgba(0, 255, 136, 0.2);
+  box-shadow: 2px 0 20px rgba(58, 163, 255, 0.15);
 }
 
 .chat-sidebar-header {
   padding: 16px;
   border-bottom: 2px solid var(--border-color);
-  background: linear-gradient(135deg, #0a0e27 0%, #16213e 100%);
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
   color: var(--text-primary);
   display: flex;
   flex-direction: column;
   gap: 8px;
-  box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
+  box-shadow: 0 4px 20px rgba(58, 163, 255, 0.2);
 }
 
 .chat-sidebar-header h3 {
   margin: 0;
   font-size: 18px;
   margin-bottom: 4px;
-  text-shadow: 0 0 10px var(--text-primary);
+  text-shadow: 0 0 10px rgba(58, 163, 255, 0.4);
   text-transform: uppercase;
   letter-spacing: 2px;
 }
@@ -370,27 +345,27 @@ button.danger:hover {
   border: 2px solid transparent;
   background: var(--bg-secondary);
   border-left: 3px solid var(--border-color);
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: "Share Tech Mono", monospace;
 }
 
 .chat-item:hover {
   background: var(--bg-tertiary);
   transform: translateX(4px);
   border-left-color: var(--text-secondary);
-  box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+  box-shadow: 0 0 15px rgba(58, 163, 255, 0.25);
 }
 
 .chat-item.active {
-  background: rgba(0, 255, 136, 0.1);
+  background: rgba(42, 124, 255, 0.12);
   border-left-color: var(--text-primary);
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.4), inset 0 0 10px rgba(0, 255, 136, 0.1);
+  box-shadow: 0 0 20px rgba(58, 163, 255, 0.35), inset 0 0 10px rgba(58, 163, 255, 0.08);
 }
 
 .chat-item-name {
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 4px;
-  text-shadow: 0 0 10px var(--text-primary);
+  text-shadow: 0 0 10px rgba(58, 163, 255, 0.35);
   text-transform: uppercase;
 }
 
@@ -400,7 +375,7 @@ button.danger:hover {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: "Share Tech Mono", monospace;
 }
 
 /* Chat Window */
@@ -415,29 +390,29 @@ button.danger:hover {
 .chat-header {
   padding: 16px 20px;
   border-bottom: 2px solid var(--border-color);
-  background: linear-gradient(135deg, #0a0e27 0%, #16213e 100%);
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
   color: var(--text-primary);
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
+  box-shadow: 0 4px 20px rgba(58, 163, 255, 0.2);
 }
 
 .chat-header h3 {
   margin: 0;
   font-size: 18px;
   flex: 1;
-  text-shadow: 0 0 10px var(--text-primary);
+  text-shadow: 0 0 10px rgba(58, 163, 255, 0.4);
   text-transform: uppercase;
   letter-spacing: 2px;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: "Share Tech Mono", monospace;
 }
 
 .chat-header span {
   font-size: 0.9em;
   opacity: 0.9;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: "Share Tech Mono", monospace;
   color: var(--text-secondary);
 }
 
@@ -453,7 +428,7 @@ button.danger:hover {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background: linear-gradient(180deg, #0a0e27 0%, #16213e 100%);
+  background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
   transition: background-color 0.3s ease;
   position: relative;
 }
@@ -465,10 +440,10 @@ button.danger:hover {
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: 
-    linear-gradient(90deg, transparent 24%, rgba(0, 255, 136, 0.05) 25%, rgba(0, 255, 136, 0.05) 26%, transparent 27%, transparent 74%, rgba(0, 255, 136, 0.05) 75%, rgba(0, 255, 136, 0.05) 76%, transparent 77%, transparent),
-    linear-gradient(rgba(0, 255, 136, 0.03) 50%, transparent 50%);
-  background-size: 50px 50px;
+  background-image:
+    linear-gradient(90deg, transparent 24%, rgba(58, 163, 255, 0.04) 25%, rgba(58, 163, 255, 0.04) 26%, transparent 27%, transparent 74%, rgba(58, 163, 255, 0.04) 75%, rgba(58, 163, 255, 0.04) 76%, transparent 77%, transparent),
+    linear-gradient(rgba(58, 163, 255, 0.02) 50%, transparent 50%);
+  background-size: 48px 48px;
   pointer-events: none;
 }
 
@@ -511,7 +486,7 @@ button.danger:hover {
   flex-direction: column;
   gap: 4px;
   border: 1px solid;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: "Share Tech Mono", monospace;
   font-size: 0.95em;
 }
 
@@ -529,7 +504,7 @@ button.danger:hover {
   color: var(--message-sent-text);
   align-items: flex-end;
   border-color: var(--text-primary);
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 20px rgba(58, 163, 255, 0.35), inset 0 0 10px rgba(255, 255, 255, 0.08);
   text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
@@ -538,7 +513,7 @@ button.danger:hover {
   color: var(--message-received-text);
   align-items: flex-start;
   border-color: var(--text-secondary);
-  box-shadow: 0 0 20px rgba(255, 0, 110, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 20px rgba(58, 163, 255, 0.18), inset 0 0 10px rgba(255, 255, 255, 0.06);
   text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
@@ -608,7 +583,7 @@ button.danger:hover {
   gap: 12px;
   align-items: center;
   transition: background-color 0.3s ease, border-color 0.3s ease;
-  box-shadow: 0 -4px 20px rgba(0, 255, 136, 0.2);
+  box-shadow: 0 -4px 20px rgba(58, 163, 255, 0.18);
 }
 
 .chat-input-area input {
@@ -620,16 +595,16 @@ button.danger:hover {
   background: var(--input-bg);
   color: var(--text-primary);
   transition: all 0.3s ease;
-  font-family: 'IBM Plex Mono', monospace;
-  text-shadow: 0 0 10px var(--text-primary);
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+  font-family: "Share Tech Mono", monospace;
+  text-shadow: 0 0 10px rgba(58, 163, 255, 0.15);
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.65);
 }
 
 .chat-input-area input:focus {
   outline: none;
   border-color: var(--text-secondary);
-  box-shadow: 0 0 20px var(--text-primary), inset 0 0 10px rgba(0, 0, 0, 0.5);
-  text-shadow: 0 0 15px var(--text-primary);
+  box-shadow: 0 0 18px rgba(58, 163, 255, 0.35), inset 0 0 10px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 0 12px rgba(58, 163, 255, 0.35);
 }
 
 .chat-input-area button {
@@ -647,13 +622,13 @@ button.danger:hover {
   background: var(--bg-primary);
   padding: 24px;
   border-radius: 0;
-  box-shadow: 0 0 50px var(--text-primary), inset 0 0 20px rgba(0, 255, 136, 0.1);
+  box-shadow: 0 0 50px rgba(58, 163, 255, 0.3), inset 0 0 20px rgba(58, 163, 255, 0.08);
   z-index: 1000;
   min-width: 300px;
   max-width: 90vw;
   transition: background-color 0.3s ease;
   border: 2px solid var(--border-color);
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: "Share Tech Mono", monospace;
 }
 
 .edit-dialog-overlay {
@@ -670,7 +645,7 @@ button.danger:hover {
 .edit-dialog h3 {
   margin-bottom: 16px;
   color: var(--text-primary);
-  text-shadow: 0 0 10px var(--text-primary);
+  text-shadow: 0 0 10px rgba(58, 163, 255, 0.4);
   text-transform: uppercase;
   letter-spacing: 2px;
 }
@@ -745,6 +720,6 @@ button.danger:hover {
 
 button:focus,
 button:focus-visible {
-  outline: 2px solid #667eea;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
