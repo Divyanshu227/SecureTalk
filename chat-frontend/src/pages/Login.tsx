@@ -3,6 +3,14 @@ import { useNavigate, Link } from "react-router-dom";
 import { loginUser, fetchMe } from "../api/auth";
 import { useAuth } from "../auth/AuthContext";
 
+type ApiError = {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+};
+
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,8 +31,9 @@ const Login = () => {
       const user = await fetchMe();
       login(token, user);
       navigate("/");
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Login failed");
+    } catch (err: unknown) {
+      const apiError = err as ApiError;
+      setError(apiError.response?.data?.message || "Login failed");
       localStorage.removeItem("token");
     } finally {
       setLoading(false);
