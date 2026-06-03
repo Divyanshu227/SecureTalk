@@ -4,7 +4,6 @@ import dotenv from "dotenv";
 dotenv.config();
 const { Pool } = pg;
 
-// Support both DATABASE_URL (for production, platforms like Heroku) and individual env vars (for local development)
 const connectionConfig =String( process.env.DATABASE_URL) 
   ? { connectionString: String(process.env.DATABASE_URL) }
   : {
@@ -15,7 +14,6 @@ const connectionConfig =String( process.env.DATABASE_URL)
       database: process.env.PG_DATABASE || "securetalk",
     };
 
-// Enable SSL for DATABASE_URL (assumes it's a managed service like Neon that requires SSL)
 const sslConfig = process.env.DATABASE_URL 
   ? { rejectUnauthorized: false }
   : (process.env.PG_SSL === "true" ? { rejectUnauthorized: false } : false);
