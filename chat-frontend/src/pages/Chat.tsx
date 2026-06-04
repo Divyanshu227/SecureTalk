@@ -45,10 +45,8 @@ const Chat = () => {
     loadChats();
   }, []);
 
-  // Refresh chat list when active chat changes (to get updated last message)
   useEffect(() => {
     if (activeChat) {
-      // Small delay to ensure any messages have been saved
       const timer = setTimeout(() => {
         console.log("Active chat changed - reloading chat list");
         loadChats();
