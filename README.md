@@ -100,28 +100,45 @@ Chatapp/
 ### 1. Database Setup
 
 ```sql
+-- Users Table
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
-  name VARCHAR(100),
-  email VARCHAR(100),
-  password VARCHAR(100),
+  name VARCHAR(255),
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE chat (
-  chatid SERIAL PRIMARY KEY,
-  userid1 INTEGER REFERENCES users(id),
-  userid2 INTEGER REFERENCES users(id)
+-- Chats Table
+CREATE TABLE chats (
+  id SERIAL PRIMARY KEY,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Chat Members Table
+CREATE TABLE chat_members (
+  id SERIAL PRIMARY KEY,
+  chat_id INTEGER REFERENCES chats(id) ON DELETE CASCADE,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(chat_id, user_id)
+);
+
+-- Messages Table
 CREATE TABLE messages (
-  messageid SERIAL PRIMARY KEY,
-  chatid INTEGER REFERENCES chat(chatid),
-  senderid INTEGER REFERENCES users(id),
-  receiverid INTEGER REFERENCES users(id),
-  content TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  id SERIAL PRIMARY KEY,
+  chat_id INTEGER REFERENCES chats(id) ON DELETE CASCADE,
+  sender_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Create indexes for performance
+CREATE INDEX idx_chat_members_user ON chat_members(user_id);
+CREATE INDEX idx_chat_members_chat ON chat_members(chat_id);
+CREATE INDEX idx_messages_chat ON messages(chat_id);
+CREATE INDEX idx_users_email ON users(email);
 ```
 
 ### 2. Backend Setup
