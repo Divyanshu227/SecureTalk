@@ -165,48 +165,44 @@ const Chat = () => {
 
   return (
     <div className="app-layout">
-      <div className={`app-sidebar glass-panel ${activeChat ? "hidden-mobile" : ""}`}>
+      <div className={`app-sidebar ${activeChat ? "hidden-mobile" : ""}`}>
         <AppSidebar onSettingsClick={() => setShowSettingsModal(true)} />
       </div>
 
-      <div className={`chat-list-panel glass-panel ${activeChat ? "hidden-mobile" : ""}`}>
+      <div className={`chat-list-panel ${activeChat ? "hidden-mobile" : ""}`}>
         <div className="chat-list-header">
-          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-            <h2>Chats</h2>
-            <ThemeToggle />
-          </div>
+          <h2>Chats <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg></h2>
           <button className="icon-btn" onClick={() => setShowSearchModal(true)}>
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
           </button>
         </div>
 
         <div className="search-box" onClick={() => setShowSearchModal(true)}>
-          <svg className="search-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: "var(--text-tertiary)" }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           <input type="text" placeholder="Search by username..." readOnly />
+          <span className="search-shortcut">⌘ K</span>
         </div>
 
-        <div className="filter-pills">
-          <div className="filter-pill active">All</div>
-          <div className="filter-pill" onClick={() => setShowInboxModal(true)}>Inbox</div>
-          <div className="filter-pill">Groups</div>
-          <div className="filter-pill">DMs</div>
-        </div>
-
-        <div className="section-title">Messages</div>
         <ChatList
           chats={chats}
           activeChat={activeChat}
           onSelect={setActiveChat}
         />
         
-        <div style={{ padding: "16px" }}>
-          <button onClick={handleLogout} className="secondary" style={{ width: "100%", fontSize: "0.85rem" }}>
-            Logout
-          </button>
+        <div className="user-profile-bottom" onClick={handleLogout}>
+          <div className="user-avatar" style={{ background: "linear-gradient(135deg, #FF6B6B, #8B3DFF)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", width: "40px", height: "40px", position: "relative" }}>
+            {user?.name?.[0]?.toUpperCase()}
+            <div className="online-indicator"></div>
+          </div>
+          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+            <span style={{ fontWeight: 600, fontSize: "0.95rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user?.name}</span>
+            <span style={{ fontSize: "0.75rem", color: "var(--success-green)" }}>Online</span>
+          </div>
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: "var(--text-tertiary)" }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
         </div>
       </div>
 
-      <div className={`chat-window glass-panel ${!activeChat ? "hidden-mobile" : ""}`}>
+      <div className={`chat-window ${!activeChat ? "hidden-mobile" : ""}`}>
         <ChatWindow chat={activeChat} onMessageSent={loadChats} onBack={() => setActiveChat(null)} />
       </div>
 

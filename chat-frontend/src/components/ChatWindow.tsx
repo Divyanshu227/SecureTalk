@@ -436,11 +436,14 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
         <div className="chat-header-user">
           {onBack && (
             <button className="icon-btn show-mobile-only" onClick={onBack} style={{ marginRight: "8px" }}>
-              <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             </button>
           )}
+          <button className="icon-btn" style={{ marginRight: "8px" }} onClick={onBack || (() => {})}>
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+          </button>
           <div style={{ position: "relative" }}>
-            <div className="user-avatar" style={{ background: "linear-gradient(135deg, #FF6B6B, #8B3DFF)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", width: "40px", height: "40px" }}>
+            <div className="user-avatar" style={{ background: "linear-gradient(135deg, #FF6B6B, #8B3DFF)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", width: "40px", height: "40px", fontSize: "1.2rem" }}>
               {chat.otherUser.name?.[0]?.toUpperCase()}
             </div>
             <div className="online-indicator"></div>
@@ -448,7 +451,7 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
           <div>
             <div style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: "4px" }}>
               {chat.otherUser.name}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--accent-blue)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--accent-blue)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
             </div>
             <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Online</div>
           </div>
@@ -463,30 +466,6 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
       </div>
 
       <div className="chat-messages" ref={messagesContainerRef}>
-        <div className="inline-profile-banner">
-          <div className="avatar-large" style={{ background: "linear-gradient(135deg, #FF6B6B, #8B3DFF)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "2rem" }}>
-            {chat.otherUser.name?.[0]?.toUpperCase()}
-          </div>
-          <div style={{ fontWeight: 600, fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "4px" }}>
-            {chat.otherUser.name}
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--accent-blue)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-          </div>
-          <div style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>{chat.otherUser.email}</div>
-          
-          <div className="stats-row">
-            <div className="stat-item">
-              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-              <span><strong>0</strong> Mutuals</span>
-            </div>
-            <div className="stat-item">
-              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-              <span><strong>0</strong> Groups</span>
-            </div>
-          </div>
-          
-          <button className="secondary" style={{ padding: "6px 16px", borderRadius: "20px", fontSize: "0.85rem" }}>View profile</button>
-        </div>
-
         <div style={{ textAlign: "center", margin: "10px 0" }}>
           <span style={{ background: "rgba(255, 255, 255, 0.05)", padding: "4px 12px", borderRadius: "10px", fontSize: "0.8rem", color: "var(--text-secondary)" }}>Today</span>
         </div>
@@ -629,13 +608,13 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
             disabled={uploading}
           />
           
-          <div style={{ display: "flex", gap: "8px", color: "var(--text-tertiary)" }}>
+          <div style={{ display: "flex", gap: "12px", color: "var(--text-tertiary)" }}>
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
           </div>
 
           <button className="send-btn" onClick={() => handleSend()} disabled={uploading}>
-            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ transform: "rotate(45deg)", marginLeft: "-2px" }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ transform: "rotate(45deg)", marginLeft: "-2px" }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
           </button>
         </div>
       </div>

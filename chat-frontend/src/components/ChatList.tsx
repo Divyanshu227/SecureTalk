@@ -22,22 +22,25 @@ const ChatList = ({ chats, activeChat, onSelect }: Props) => {
           No chats yet. Start a conversation!
         </div>
       ) : (
-        chats.map((chat) => (
+        chats.map((chat, index) => (
           <div
             key={chat.id}
             className={`chat-list-item ${activeChat?.id === chat.id ? "active" : ""}`}
             onClick={() => onSelect(chat)}
           >
-            <div className="user-avatar" style={{ background: "linear-gradient(135deg, #FF6B6B, #8B3DFF)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold" }}>
+            <div className="user-avatar" style={{ background: "linear-gradient(135deg, #FF6B6B, #8B3DFF)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", width: "44px", height: "44px", flexShrink: 0, fontSize: "1.2rem" }}>
               {chat.otherUser.name?.[0]?.toUpperCase()}
             </div>
             <div className="chat-item-content">
               <div className="chat-item-header">
                 <span className="chat-item-name">{chat.otherUser.name}</span>
-                <span className="chat-item-time">10:28 AM</span>
+                <span className="chat-item-time">11:34 PM</span>
               </div>
-              <div className="chat-item-preview">
-                {chat.lastMessage ?? "No messages yet"}
+              <div className="chat-item-header" style={{ marginBottom: 0 }}>
+                <span className="chat-item-preview">
+                  {chat.lastMessage ?? "hello my name is divyanshu"}
+                </span>
+                {index < 3 && <span className="unread-badge">{index + 1}</span>}
               </div>
             </div>
           </div>
