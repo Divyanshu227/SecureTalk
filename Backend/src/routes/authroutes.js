@@ -1,13 +1,14 @@
 import express from "express";
-import { register, login, getMe, getAllUsers, updatePublicKey, backupKey } from "../controllers/authcontroller.js";
+import { register, login, getMe, searchUsers, updatePublicKey, backupKey, toggleRequireConnection } from "../controllers/authcontroller.js";
 import authMiddleware from "../middleware/authMiddleware.js";
-// Explanation: This file sets up the authentication routes for the application. It includes routes for user registration, login, fetching the authenticated user's information, and retrieving a list of all users except the authenticated user. The routes that require authentication use the authMiddleware to ensure that only authenticated users can access them.
+
 const router = express.Router();
 router.post("/register", register);
 router.post("/login", login);
 router.post("/keys", authMiddleware, updatePublicKey);
 router.post("/backup-key", authMiddleware, backupKey);
+router.post("/toggle-connection", authMiddleware, toggleRequireConnection);
 router.get("/me", authMiddleware, getMe);
-router.get("/users", authMiddleware, getAllUsers);
+router.get("/users/search", authMiddleware, searchUsers);
 
 export default router;
