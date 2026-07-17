@@ -15,10 +15,11 @@ import MediaMessage from "./MediaMessage";
 
 interface Props {
   chat: Chat | null;
-  onMessageSent?: () => void;
+  onMessageSent: () => void;
+  onBack?: () => void;
 }
 
-const ChatWindow = ({ chat, onMessageSent }: Props) => {
+const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
   const [messages, setMessages] = useState<LocalMessage[]>([]);
   const [text, setText] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -433,6 +434,11 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
     <>
       <div className="chat-header">
         <div className="chat-header-user">
+          {onBack && (
+            <button className="icon-btn show-mobile-only" onClick={onBack} style={{ marginRight: "8px" }}>
+              <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            </button>
+          )}
           <div style={{ position: "relative" }}>
             <div className="user-avatar" style={{ background: "linear-gradient(135deg, #FF6B6B, #8B3DFF)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", width: "40px", height: "40px" }}>
               {chat.otherUser.name?.[0]?.toUpperCase()}

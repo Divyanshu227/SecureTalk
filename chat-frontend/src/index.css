@@ -598,3 +598,75 @@ button.icon-btn:hover {
 .auth-form .form-group { margin-bottom: 16px; }
 .auth-form label { display: block; margin-bottom: 6px; color: var(--text-secondary); }
 .auth-form button { width: 100%; margin-top: 16px; }
+
+/* --- Responsive & Responsiveness Fixes --- */
+
+.app-sidebar {
+  flex-shrink: 0;
+}
+
+.chat-list-panel {
+  flex-shrink: 0;
+}
+
+.chat-window {
+  min-width: 300px;
+}
+
+@media (max-width: 1024px) {
+  .app-sidebar {
+    width: 80px;
+    padding: 24px 12px;
+  }
+  .app-sidebar span {
+    display: none;
+  }
+  .pro-widget {
+    display: none;
+  }
+  .user-profile-mini {
+    justify-content: center;
+  }
+  .user-profile-mini > div:last-child {
+    display: none;
+  }
+  .chat-list-panel {
+    width: 280px;
+  }
+}
+
+@media (max-width: 768px) {
+  #root {
+    padding: 0;
+  }
+  .app-layout {
+    gap: 0;
+  }
+  .glass-panel {
+    border-radius: 0;
+    border: none;
+  }
+  .app-sidebar {
+    display: none; /* Hide left sidebar on small screens */
+  }
+  .chat-list-panel {
+    width: 100%;
+  }
+  .hidden-mobile {
+    display: none !important;
+  }
+  .inline-profile-banner {
+    padding: 16px;
+  }
+  .stats-row {
+    gap: 12px;
+  }
+  .show-mobile-only {
+    display: inline-flex !important;
+  }
+}
+
+.show-mobile-only {
+  display: none !important;
+}
+

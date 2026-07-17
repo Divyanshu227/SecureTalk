@@ -165,9 +165,11 @@ const Chat = () => {
 
   return (
     <div className="app-layout">
-      <AppSidebar onSettingsClick={() => setShowSettingsModal(true)} />
+      <div className={`app-sidebar glass-panel ${activeChat ? "hidden-mobile" : ""}`}>
+        <AppSidebar onSettingsClick={() => setShowSettingsModal(true)} />
+      </div>
 
-      <div className="chat-list-panel glass-panel">
+      <div className={`chat-list-panel glass-panel ${activeChat ? "hidden-mobile" : ""}`}>
         <div className="chat-list-header">
           <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
             <h2>Chats</h2>
@@ -204,8 +206,8 @@ const Chat = () => {
         </div>
       </div>
 
-      <div className="chat-window glass-panel">
-        <ChatWindow chat={activeChat} onMessageSent={loadChats} />
+      <div className={`chat-window glass-panel ${!activeChat ? "hidden-mobile" : ""}`}>
+        <ChatWindow chat={activeChat} onMessageSent={loadChats} onBack={() => setActiveChat(null)} />
       </div>
 
       {showSearchModal && (
