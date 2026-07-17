@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { registerUser } from "../api/auth";
+import { generateKeyPair, encryptPrivateKeyWithPassword } from "../utils/crypto";
 
 type ApiError = {
   response?: {
@@ -27,7 +28,14 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await registerUser(name, email, password, undefined);
+      // 1. Generate new E2EE key pair
+      const { privateKey, publicKeyBase64 } = await generateKeyPair();
+      
+      // 2. Encrypt the private key with the user's password so it can be safely stored on the server
+      const encryptedPrivateKey = await encryptPrivateKeyWithPassword(privateKey, password, email);
+
+      // 3. Register user with keys
+      await registerUser(name, email, password, publicKeyBase64, encryptedPrivateKey);
       setSuccess("Registration successful! Redirecting to login...");
       setTimeout(() => navigate("/login"), 2000);
     } catch (err: unknown) {

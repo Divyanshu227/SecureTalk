@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { loginUser, fetchMe, updatePublicKey } from "../api/auth";
+import { loginUser, fetchMe, updatePublicKey, backupKey } from "../api/auth";
 import { useAuth } from "../auth/AuthContext";
-import { generateKeyPair } from "../utils/crypto";
+import { generateKeyPair, decryptPrivateKeyWithPassword, encryptPrivateKeyWithPassword } from "../utils/crypto";
 import { getMyPrivateKey, saveMyPrivateKey } from "../db/localDb";
 
 type ApiError = {
@@ -28,18 +28,35 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const { token } = await loginUser(email, password, undefined);
+      const { token, encryptedPrivateKey } = await loginUser(email, password, undefined);
       localStorage.setItem("token", token);
       const user = await fetchMe();
 
-      // Check if we already have a key on this device for this user
       let localPrivateKey = await getMyPrivateKey(user.id);
 
-      if (!localPrivateKey) {
-        // Generate new keys for this device
+      if (encryptedPrivateKey) {
+        // Cross-device login! Decrypt the backed-up private key using the plaintext password
+        try {
+          const decryptedKey = await decryptPrivateKeyWithPassword(encryptedPrivateKey, password, email);
+          await saveMyPrivateKey(user.id, decryptedKey);
+          console.log("Successfully restored private key from server backup!");
+        } catch (decryptErr) {
+          console.error("Failed to decrypt private key backup. Password might be wrong or data corrupted.", decryptErr);
+          throw new Error("Failed to decrypt your encryption key. Check your password.");
+        }
+      } else if (localPrivateKey) {
+        // Progressive Migration: User has an existing key locally but no server backup yet
+        console.log("Backing up local private key to server for cross-device support...");
+        const newEncryptedKey = await encryptPrivateKeyWithPassword(localPrivateKey, password, email);
+        await backupKey(newEncryptedKey);
+      } else {
+        // Fallback for legacy accounts with no key on this device and no server backup
+        console.warn("No keys found anywhere! Generating a brand new keypair (History will be unreadable)");
         const keyPair = await generateKeyPair();
         await saveMyPrivateKey(user.id, keyPair.privateKey);
         await updatePublicKey(keyPair.publicKeyBase64);
+        const newEncryptedKey = await encryptPrivateKeyWithPassword(keyPair.privateKey, password, email);
+        await backupKey(newEncryptedKey);
       }
 
       login(token, user);

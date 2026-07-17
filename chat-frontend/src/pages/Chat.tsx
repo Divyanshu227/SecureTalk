@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { fetchChats, createChat, fetchUsers } from "../api/chat";
 import type { Chat as ChatType } from "../types";
-import { getLocalChats, saveChatsLocally, getLocalMessages, getMyPrivateKey, saveMyPrivateKey } from "../db/localDb";
-import { decryptMessage, generateKeyPair } from "../utils/crypto";
-import { updatePublicKey } from "../api/auth";
+import { getLocalChats, saveChatsLocally, getLocalMessages, getMyPrivateKey } from "../db/localDb";
+import { decryptMessage } from "../utils/crypto";
 import ChatList from "../components/ChatList.tsx";
 import ChatWindow from "../components/ChatWindow.tsx";
 import ThemeToggle from "../components/ThemeToggle";
@@ -24,15 +23,9 @@ const Chat = () => {
   const loadChats = async () => {
     try {
       if (user) {
-        // Self-healing: generate keys if missing
-        let privateKey = await getMyPrivateKey(user.id);
-        if (!privateKey) {
-          console.log("No private key found! Generating new key pair...");
-          const keyPair = await generateKeyPair();
-          await saveMyPrivateKey(user.id, keyPair.privateKey);
-          await updatePublicKey(keyPair.publicKeyBase64);
-          console.log("Generated and uploaded new public key.");
-        }
+        // No more self-healing key generation here.
+        // Key generation and decryption is entirely handled in Login.tsx & Register.tsx
+        // to ensure cross-device consistency and password-based encryption.
       }
 
       console.log("Loading chats from local DB...");

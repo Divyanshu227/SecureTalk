@@ -4,7 +4,7 @@ import pool from "../config/db.js";
 // This is used for registrering users, logging in, and fetching user data.
 export const register = async (req, res) => {
   try {
-    const { name, email, password, publicKey } = req.body;
+    const { name, email, password, publicKey, encryptedPrivateKey } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ message: "Missing fields" });
@@ -22,8 +22,8 @@ export const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await pool.query(
-      "INSERT INTO users (name, email, password, public_key) VALUES ($1,$2,$3,$4)",
-      [name, email, hashedPassword, publicKey || null]
+      "INSERT INTO users (name, email, password, public_key, encrypted_private_key) VALUES ($1,$2,$3,$4,$5)",
+      [name, email, hashedPassword, publicKey || null, encryptedPrivateKey || null]
     );
 
     res.status(201).json({ message: "User registered successfully" });
@@ -54,18 +54,13 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Update public key if provided on login (new device)
-    if (publicKey && publicKey !== user.public_key) {
-      await pool.query("UPDATE users SET public_key = $1 WHERE id = $2", [publicKey, user.id]);
-    }
-
     const token = jwt.sign(
       { id: user.id, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: "14d" }
     );
 
-    res.json({ token, user: { id: user.id } });
+    res.json({ token, user: { id: user.id }, encryptedPrivateKey: user.encrypted_private_key });
   } catch (err) {
     console.error("Login error:", err.message);
     res.status(500).json({ message: "Server error" });
@@ -75,7 +70,7 @@ export const login = async (req, res) => {
 export const getMe = async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, name, email, public_key FROM users WHERE id=$1",
+      "SELECT id, name, email, public_key, encrypted_private_key as \"encryptedPrivateKey\" FROM users WHERE id=$1",
       [req.user.id]
     );
 
@@ -113,6 +108,18 @@ export const updatePublicKey = async (req, res) => {
     res.json({ message: "Key updated" });
   } catch (err) {
     console.error("UpdatePublicKey error:", err.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const backupKey = async (req, res) => {
+  try {
+    const { encryptedPrivateKey } = req.body;
+    if (!encryptedPrivateKey) return res.status(400).json({ message: "Missing encryptedPrivateKey" });
+    await pool.query("UPDATE users SET encrypted_private_key = $1 WHERE id = $2", [encryptedPrivateKey, req.user.id]);
+    res.json({ message: "Key backed up" });
+  } catch (err) {
+    console.error("BackupKey error:", err.message);
     res.status(500).json({ message: "Server error" });
   }
 };
