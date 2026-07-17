@@ -37,7 +37,8 @@ export const getChats = async (req, res) => {
     (select created_at from messages where chatid = c.chatid order by created_at desc limit 1) as last_message_time,
     u.id as other_user_id,
     u.name as other_user_name,
-    u.email as other_user_email
+    u.email as other_user_email,
+    u.public_key as other_user_public_key
     from chat c
     join users u on (c.userid1 = u.id and c.userid2 = $1) or (c.userid2 = u.id and c.userid1 = $1)
     where c.userid1 = $1 or c.userid2 = $1
@@ -68,7 +69,8 @@ export const getChats = async (req, res) => {
     otherUser: {
       id: row.other_user_id,
       name: row.other_user_name,
-      email: row.other_user_email
+      email: row.other_user_email,
+      public_key: row.other_user_public_key
     }
   }));
 

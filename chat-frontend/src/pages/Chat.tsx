@@ -34,6 +34,10 @@ const Chat = () => {
       // Update local storage and state with fresh data
       await saveChatsLocally(data);
       setChats(data);
+      setActiveChat(current => {
+        if (!current) return current;
+        return data.find(c => c.id === current.id) || current;
+      });
     } catch (err) {
       console.error("Failed to load chats", err);
     }
@@ -92,9 +96,11 @@ const Chat = () => {
   const handleNewChat = async (userId: number) => {
     try {
       const { chatId } = await createChat(userId);
-      await loadChats();
+      const data = await fetchChats();
+      await saveChatsLocally(data);
+      setChats(data);
       setShowNewChatModal(false);
-      const newChat = chats.find(c => c.id === chatId);
+      const newChat = data.find(c => c.id === chatId);
       if (newChat) {
         setActiveChat(newChat);
       }
