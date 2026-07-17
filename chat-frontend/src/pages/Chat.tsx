@@ -68,7 +68,13 @@ const Chat = () => {
       setChats(data);
       setActiveChat(current => {
         if (!current) return current;
-        return data.find(c => c.id === current.id) || current;
+        const updated = data.find(c => c.id === current.id);
+        if (!updated) return current;
+        // Only update if the public key changed (avoids triggering ChatWindow reload for sidebar updates)
+        if (updated.otherUser.public_key === current.otherUser.public_key) {
+          return current; // Keep the same reference — no re-render in ChatWindow
+        }
+        return updated;
       });
     } catch (err) {
       console.error("Failed to load chats", err);

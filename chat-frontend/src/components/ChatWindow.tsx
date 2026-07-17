@@ -93,7 +93,7 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
     } finally {
       setLoading(false);
     }
-  }, [chat, scrollToBottom]);
+  }, [chat?.id, scrollToBottom, user?.id]);
 
   // Load messages when chat changes
   useEffect(() => {
@@ -233,10 +233,20 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
       const localSyncedMsg = { ...newMsg, content: messageText };
       await saveSingleMessageLocally(chat.id, localSyncedMsg, 'synced');
       
-      // Remove temp from local DB and state
+      // Remove temp from state and replace with the real message
       await deleteMessageLocally(tempId);
-      const updatedLocalMsgs = await getLocalMessages(chat.id);
-      setMessages(updatedLocalMsgs);
+      setMessages((prev) => {
+        const filtered = prev.filter(m => m.id !== tempId);
+        const realMsg: LocalMessage = {
+          ...localSyncedMsg,
+          chatId: chat.id,
+          syncStatus: 'synced',
+          issent: true,
+        };
+        // Avoid duplicate if socket already added it
+        if (filtered.some(m => m.id === newMsg.id)) return filtered;
+        return [...filtered, realMsg];
+      });
 
       onMessageSent?.();
       scrollToBottom();
