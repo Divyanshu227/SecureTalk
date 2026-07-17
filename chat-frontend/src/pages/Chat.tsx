@@ -56,8 +56,9 @@ const Chat = () => {
             const decrypted = await decryptMessage(c.lastMessage, privateKey);
             c.lastMessage = decrypted;
           } catch (err: any) {
+            const originalText = c.lastMessage;
             c.lastMessage = "Encrypted message";
-            socket?.emit("client_error", { context: "Chat.tsx loadChats", message: err.message, stack: err.stack, content: c.lastMessage });
+            socket?.emit("client_error", { context: "Chat.tsx loadChats", message: err.message, stack: err.stack, content: originalText });
           }
         }
       }
@@ -139,8 +140,9 @@ const Chat = () => {
             const decrypted = await decryptMessage(c.lastMessage, privateKey);
             c.lastMessage = decrypted;
           } catch (err: any) {
+            const originalText = c.lastMessage;
             c.lastMessage = "Encrypted message";
-            socket?.emit("client_error", { context: "Chat.tsx handleNewChat", message: err.message, stack: err.stack, content: c.lastMessage });
+            socket?.emit("client_error", { context: "Chat.tsx handleNewChat", message: err.message, stack: err.stack, content: originalText });
           }
         }
       }
