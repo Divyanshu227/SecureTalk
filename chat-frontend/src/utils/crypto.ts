@@ -86,21 +86,16 @@ export async function encryptMessage(text: string, publicKeyBase64: string): Pro
  * Decrypts a Base64 encrypted message using the local Private Key.
  */
 export async function decryptMessage(encryptedBase64: string, privateKey: CryptoKey): Promise<string> {
-  try {
-    const encryptedBuffer = base64ToBuffer(encryptedBase64);
+  const encryptedBuffer = base64ToBuffer(encryptedBase64);
 
-    const decryptedBuffer = await window.crypto.subtle.decrypt(
-      {
-        name: "RSA-OAEP"
-      },
-      privateKey,
-      encryptedBuffer
-    );
+  const decryptedBuffer = await window.crypto.subtle.decrypt(
+    {
+      name: "RSA-OAEP"
+    },
+    privateKey,
+    encryptedBuffer
+  );
 
-    const dec = new TextDecoder();
-    return dec.decode(decryptedBuffer);
-  } catch (error) {
-    console.error("Failed to decrypt message:", error);
-    return "[Encrypted Message - Decryption Failed]";
-  }
+  const dec = new TextDecoder();
+  return dec.decode(decryptedBuffer);
 }

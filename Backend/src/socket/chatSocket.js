@@ -77,6 +77,10 @@ export const initChatSocket = (io) => {
       }
     });
 
+    socket.on("client_error", (data) => {
+      console.error("❌ CLIENT ERROR FROM USER", socket.user?.id, ":", data);
+    });
+
     socket.on("disconnect", () => {
       // socket disconnected
     });

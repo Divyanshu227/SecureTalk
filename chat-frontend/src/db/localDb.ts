@@ -76,8 +76,19 @@ export const clearLocalDb = async () => {
 };
 
 export const getMyPrivateKey = async (userId: number): Promise<CryptoKey | undefined> => {
-  const keyEntry = await localDb.keys.get(`privateKey_${userId}`);
-  return keyEntry?.privateKey;
+  let keyEntry = await localDb.keys.get(`privateKey_${userId}`);
+  if (keyEntry) {
+    return keyEntry.privateKey;
+  }
+
+  // Fallback: migrate old un-scoped key
+  const oldKeyEntry = await localDb.keys.get("myPrivateKey");
+  if (oldKeyEntry) {
+    await localDb.keys.put({ id: `privateKey_${userId}`, privateKey: oldKeyEntry.privateKey });
+    await localDb.keys.delete("myPrivateKey");
+    return oldKeyEntry.privateKey;
+  }
+  return undefined;
 };
 
 export const saveMyPrivateKey = async (userId: number, privateKey: CryptoKey) => {

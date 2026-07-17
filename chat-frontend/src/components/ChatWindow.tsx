@@ -68,10 +68,10 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
         if (privateKey) {
           try {
              const decryptedContent = await decryptMessage(msg.content, privateKey);
-             if (decryptedContent !== "[Encrypted Message - Decryption Failed]") {
-                return { ...msg, content: decryptedContent };
-             }
-          } catch(e) { }
+             return { ...msg, content: decryptedContent };
+          } catch(err: any) {
+             socket?.emit("client_error", { context: "ChatWindow.tsx loadMessages", message: err.message, stack: err.stack, content: msg.content });
+          }
         }
         return msg; // Fallback to plaintext if decryption fails (e.g. old messages)
       }));
@@ -131,11 +131,10 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
         if (privateKey) {
           try {
             const decryptedContent = await decryptMessage(data.content, privateKey);
-            if (decryptedContent !== "[Encrypted Message - Decryption Failed]") {
-              finalContent = decryptedContent;
-            }
-          } catch (e) {
-            console.error("Socket message decryption failed", e);
+            finalContent = decryptedContent;
+          } catch (err: any) {
+            console.error("Socket message decryption failed", err);
+            socket?.emit("client_error", { context: "ChatWindow.tsx processIncomingMessage", message: err.message, stack: err.stack, content: data.content });
           }
         }
 
