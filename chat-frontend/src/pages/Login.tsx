@@ -45,6 +45,7 @@ const Login = () => {
         // Also ensure the public key matches! (Fixes mismatch if another device generated a new key)
         const restoredPublicKey = await derivePublicKeyBase64(localPrivateKey);
         await updatePublicKey(restoredPublicKey);
+        user.public_key = restoredPublicKey;
       } else if (encryptedPrivateKey) {
         // No local key, but server has a backup! (Cross-device login)
         try {
@@ -54,6 +55,7 @@ const Login = () => {
           // Also ensure public key matches
           const restoredPublicKey = await derivePublicKeyBase64(decryptedKey);
           await updatePublicKey(restoredPublicKey);
+          user.public_key = restoredPublicKey;
           
           console.log("Successfully restored private key from server backup!");
         } catch (decryptErr) {
@@ -68,6 +70,7 @@ const Login = () => {
         await updatePublicKey(keyPair.publicKeyBase64);
         const newEncryptedKey = await encryptPrivateKeyWithPassword(keyPair.privateKey, password, email);
         await backupKey(newEncryptedKey);
+        user.public_key = keyPair.publicKeyBase64;
       }
 
       login(token, user);
