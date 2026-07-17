@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchChats, createChat, fetchUsers } from "../api/chat";
 import type { Chat as ChatType } from "../types";
+import { getLocalChats, saveChatsLocally } from "../db/localDb";
 import ChatList from "../components/ChatList.tsx";
 import ChatWindow from "../components/ChatWindow.tsx";
 import ThemeToggle from "../components/ThemeToggle";
@@ -20,9 +21,18 @@ const Chat = () => {
 
   const loadChats = async () => {
     try {
-      console.log("Loading chats...");
+      console.log("Loading chats from local DB...");
+      const localChats = await getLocalChats();
+      if (localChats && localChats.length > 0) {
+        setChats(localChats);
+      }
+
+      console.log("Fetching chats from server...");
       const data = await fetchChats();
-      console.log("Chats loaded:", data);
+      console.log("Chats loaded from server:", data);
+      
+      // Update local storage and state with fresh data
+      await saveChatsLocally(data);
       setChats(data);
     } catch (err) {
       console.error("Failed to load chats", err);

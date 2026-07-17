@@ -8,6 +8,7 @@ import {
 } from "../api/message";
 import { useAuth } from "../auth/AuthContext";
 import { useSocket } from "../contexts/SocketContext";
+import { getLocalMessages, saveMessagesLocally, saveSingleMessageLocally, type LocalMessage } from "../db/localDb";
 
 interface Props {
   chat: Chat | null;
@@ -15,7 +16,7 @@ interface Props {
 }
 
 const ChatWindow = ({ chat, onMessageSent }: Props) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<LocalMessage[]>([]);
   const [text, setText] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
@@ -39,14 +40,19 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
     }
     setLoading(true);
     try {
+      // First, load from local DB
+      const localMsgs = await getLocalMessages(chat.id);
+      if (localMsgs && localMsgs.length > 0) {
+        setMessages(localMsgs);
+        scrollToBottom();
+      }
+
+      // Then background sync with server
       const data = await fetchMessages(chat.id);
-      // Ensure messages are sorted by timestamp
-      const sortedMessages = [...data].sort((a, b) => {
-        const timeA = new Date(a.created_at || 0).getTime();
-        const timeB = new Date(b.created_at || 0).getTime();
-        return timeA - timeB;
-      });
-      setMessages(sortedMessages);
+      await saveMessagesLocally(chat.id, data);
+      
+      const updatedLocalMsgs = await getLocalMessages(chat.id);
+      setMessages(updatedLocalMsgs);
       scrollToBottom();
     } catch (error) {
       console.error("Failed to load messages", error);
@@ -89,13 +95,18 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
       // Add message to UI immediately without reloading
       const isMyMessage = Number(data.senderId) === Number(user?.id);
 
-      const newMessage: Message = {
+      const newMessage: LocalMessage = {
         id: data.id || Date.now(),
+        chatId: chat.id,
         senderId: data.senderId,
         receiverId: isMyMessage ? chat.otherUser.id : (user?.id || 0),
         content: data.content,
         created_at: data.created_at || data.timestamp,
+        syncStatus: 'synced',
       };
+      
+      // Save it locally too
+      saveSingleMessageLocally(chat.id, newMessage);
 
       setMessages((prev) => {
         // Check if message already exists (don't add duplicates)
@@ -128,15 +139,33 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
     setText("");
 
     try {
+      // Create pending message
+      const tempId = Date.now();
+      const pendingMsg: LocalMessage = {
+        id: tempId,
+        chatId: chat.id,
+        senderId: user?.id || 0,
+        receiverId: chat.otherUser.id,
+        content: messageText,
+        created_at: new Date().toISOString(),
+        issent: true,
+        syncStatus: 'pending'
+      };
+      
+      await saveSingleMessageLocally(chat.id, pendingMsg, 'pending');
+      setMessages((prev) => [...prev, pendingMsg]);
+      scrollToBottom();
+
       // Send via API to persist the message
       const newMsg = await sendMessage(chat.id, messageText);
       console.log("✅ Message sent and saved:", newMsg);
 
-      // Update local state immediately with the API response
-      // loadMessages(); // Refresh messages to get the persisted message with ID and timestamp
-      // prev- parameter
-
-      setMessages((prev) => [...prev, newMsg]);
+      // Save real message, we should ideally delete the pending one from db 
+      // but for simplicity we'll just reload the messages or update it.
+      await saveSingleMessageLocally(chat.id, newMsg, 'synced');
+      const updatedLocalMsgs = await getLocalMessages(chat.id);
+      // Remove temp from local state
+      setMessages(updatedLocalMsgs.filter(m => m.id !== tempId));
 
       onMessageSent?.();
       scrollToBottom();
@@ -246,7 +275,10 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
                   }}
                 >
                   <div className="message-bubble">
-                    <div className="message-content">{msg.content}</div>
+                    <div className="message-content">
+                      {msg.content}
+                      {msg.syncStatus === 'pending' && <span style={{fontSize: '0.8em', marginLeft: '5px'}}>⏳</span>}
+                    </div>
                     <div className="message-time">
                       {new Date(msg.created_at || "").toLocaleTimeString([], {
                         hour: "2-digit",
