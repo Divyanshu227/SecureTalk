@@ -3,6 +3,7 @@ import type { User } from "../types";
 
 export const registerUser = async (
   name: string,
+  username: string,
   email: string,
   password: string,
   publicKey?: string,
@@ -10,6 +11,7 @@ export const registerUser = async (
 ): Promise<{ message: string }> => {
   const res = await api.post<{ message: string }>("/auth/register", {
     name,
+    username,
     email,
     password,
     publicKey,
@@ -43,5 +45,16 @@ export const updatePublicKey = async (publicKey: string): Promise<{ message: str
 
 export const backupKey = async (encryptedPrivateKey: string): Promise<{ message: string }> => {
   const res = await api.post<{ message: string }>("/auth/backup-key", { encryptedPrivateKey });
+  return res.data;
+};
+
+export const searchUsers = async (query: string): Promise<User[]> => {
+  if (!query) return [];
+  const res = await api.get<User[]>(`/auth/users/search?query=${encodeURIComponent(query)}`);
+  return res.data;
+};
+
+export const toggleRequireConnection = async (requireConnection: boolean): Promise<{ message: string }> => {
+  const res = await api.post<{ message: string }>("/auth/toggle-connection", { requireConnection });
   return res.data;
 };
