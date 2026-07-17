@@ -65,7 +65,7 @@ export const login = async (req, res) => {
       { expiresIn: "14d" }
     );
 
-    res.json({ token });
+    res.json({ token, user: { id: user.id } });
   } catch (err) {
     console.error("Login error:", err.message);
     res.status(500).json({ message: "Server error" });
@@ -101,6 +101,18 @@ export const getAllUsers = async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     console.error("GetAllUsers error:", err.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const updatePublicKey = async (req, res) => {
+  try {
+    const { publicKey } = req.body;
+    if (!publicKey) return res.status(400).json({ message: "Missing publicKey" });
+    await pool.query("UPDATE users SET public_key = $1 WHERE id = $2", [publicKey, req.user.id]);
+    res.json({ message: "Key updated" });
+  } catch (err) {
+    console.error("UpdatePublicKey error:", err.message);
     res.status(500).json({ message: "Server error" });
   }
 };

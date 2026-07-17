@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { loginUser, fetchMe } from "../api/auth";
+import { loginUser, fetchMe, updatePublicKey } from "../api/auth";
 import { useAuth } from "../auth/AuthContext";
 import { generateKeyPair } from "../utils/crypto";
 import { getMyPrivateKey, saveMyPrivateKey } from "../db/localDb";
@@ -28,20 +28,20 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // Check if we already have a key on this device
-      let localPrivateKey = await getMyPrivateKey();
-      let publicKeyBase64: string | undefined;
+      const { token } = await loginUser(email, password, undefined);
+      localStorage.setItem("token", token);
+      const user = await fetchMe();
+
+      // Check if we already have a key on this device for this user
+      let localPrivateKey = await getMyPrivateKey(user.id);
 
       if (!localPrivateKey) {
         // Generate new keys for this device
         const keyPair = await generateKeyPair();
-        await saveMyPrivateKey(keyPair.privateKey);
-        publicKeyBase64 = keyPair.publicKeyBase64;
+        await saveMyPrivateKey(user.id, keyPair.privateKey);
+        await updatePublicKey(keyPair.publicKeyBase64);
       }
 
-      const { token } = await loginUser(email, password, publicKeyBase64);
-      localStorage.setItem("token", token);
-      const user = await fetchMe();
       login(token, user);
       navigate("/");
     } catch (err: unknown) {

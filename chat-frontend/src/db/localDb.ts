@@ -75,11 +75,11 @@ export const clearLocalDb = async () => {
   // We generally DO NOT clear keys on logout to preserve access if they log back in
 };
 
-export const getMyPrivateKey = async (): Promise<CryptoKey | undefined> => {
-  const keyEntry = await localDb.keys.get("myPrivateKey");
+export const getMyPrivateKey = async (userId: number): Promise<CryptoKey | undefined> => {
+  const keyEntry = await localDb.keys.get(`privateKey_${userId}`);
   return keyEntry?.privateKey;
 };
 
-export const saveMyPrivateKey = async (privateKey: CryptoKey) => {
-  await localDb.keys.put({ id: "myPrivateKey", privateKey });
+export const saveMyPrivateKey = async (userId: number, privateKey: CryptoKey) => {
+  await localDb.keys.put({ id: `privateKey_${userId}`, privateKey });
 };

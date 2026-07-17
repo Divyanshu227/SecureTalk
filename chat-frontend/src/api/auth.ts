@@ -33,3 +33,8 @@ export const fetchMe = async (): Promise<User> => {
   const res = await api.get<User>("/auth/me");
   return res.data;
 };
+
+export const updatePublicKey = async (publicKey: string): Promise<{ message: string }> => {
+  const res = await api.post<{ message: string }>("/auth/keys", { publicKey });
+  return res.data;
+};

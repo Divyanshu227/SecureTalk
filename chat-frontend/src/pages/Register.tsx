@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { registerUser } from "../api/auth";
-import { generateKeyPair } from "../utils/crypto";
-import { saveMyPrivateKey } from "../db/localDb";
 
 type ApiError = {
   response?: {
@@ -29,10 +27,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const keyPair = await generateKeyPair();
-      await saveMyPrivateKey(keyPair.privateKey);
-
-      await registerUser(name, email, password, keyPair.publicKeyBase64);
+      await registerUser(name, email, password, undefined);
       setSuccess("Registration successful! Redirecting to login...");
       setTimeout(() => navigate("/login"), 2000);
     } catch (err: unknown) {
