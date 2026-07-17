@@ -52,7 +52,7 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
       const data = await fetchMessages(chat.id);
       
       // Decrypt messages from server
-      const privateKey = await getMyPrivateKey();
+      const privateKey = user ? await getMyPrivateKey(user.id) : undefined;
       const decryptedData = await Promise.all(data.map(async (msg: Message) => {
         const isMyMessage = Number(msg.senderId) === Number(user?.id);
         
@@ -127,7 +127,7 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
 
       const processIncomingMessage = async () => {
         let finalContent = data.content;
-        const privateKey = await getMyPrivateKey();
+        const privateKey = user ? await getMyPrivateKey(user.id) : undefined;
         if (privateKey) {
           try {
             const decryptedContent = await decryptMessage(data.content, privateKey);

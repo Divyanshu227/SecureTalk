@@ -16,7 +16,7 @@ const Chat = () => {
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [users, setUsers] = useState<{ id: number; name: string; email: string }[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { socket, isConnected } = useSocket();
   const navigate = useNavigate();
 
@@ -33,7 +33,7 @@ const Chat = () => {
       console.log("Chats loaded from server:", data);
       
       // Decrypt last messages or pull from local DB
-      const privateKey = await getMyPrivateKey();
+      const privateKey = user ? await getMyPrivateKey(user.id) : undefined;
       for (const c of data) {
         const localMsgs = await getLocalMessages(c.id);
         if (localMsgs && localMsgs.length > 0) {
@@ -119,7 +119,7 @@ const Chat = () => {
       const { chatId } = await createChat(userId);
       const data = await fetchChats();
       
-      const privateKey = await getMyPrivateKey();
+      const privateKey = user ? await getMyPrivateKey(user.id) : undefined;
       for (const c of data) {
         const localMsgs = await getLocalMessages(c.id);
         if (localMsgs && localMsgs.length > 0) {
