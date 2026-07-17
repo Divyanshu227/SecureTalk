@@ -3,7 +3,24 @@ import pool from "../config/db.js";
 export const createChat = async (req, res) => {
   const { otherUserId } = req.body;
 
-  const existingChat = await pool.query(
+  try {
+    // Check privacy settings
+    const otherUserRes = await pool.query("SELECT require_connection FROM users WHERE id = $1", [otherUserId]);
+    if (otherUserRes.rowCount === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (otherUserRes.rows[0].require_connection) {
+      const connRes = await pool.query(
+        "SELECT 1 FROM connections WHERE (user1=$1 AND user2=$2) OR (user1=$2 AND user2=$1)",
+        [req.user.id, otherUserId]
+      );
+      if (connRes.rowCount === 0) {
+        return res.status(403).json({ message: "Connection required to message this user." });
+      }
+    }
+
+    const existingChat = await pool.query(
     // Check if a chat already exists between the two users
     `
     SELECT chatid from chat where ((userid1=$1 and userid2=$2) or (userid1 =$2 and userid2=$1))
@@ -27,7 +44,11 @@ export const createChat = async (req, res) => {
   //   [chatId, req.user.id, otherUserId]
   // );
 
-  res.json({ chatId });
+    res.json({ chatId });
+  } catch (err) {
+    console.error("Create chat error:", err.message);
+    res.status(500).json({ message: "Server error" });
+  }
 };
 // this fetches all chats for the authenticated user along with the last message and other user's info
 export const getChats = async (req, res) => {
@@ -37,6 +58,7 @@ export const getChats = async (req, res) => {
     (select created_at from messages where chatid = c.chatid order by created_at desc limit 1) as last_message_time,
     u.id as other_user_id,
     u.name as other_user_name,
+    u.username as other_user_username,
     u.email as other_user_email,
     u.public_key as other_user_public_key
     from chat c
@@ -69,6 +91,7 @@ export const getChats = async (req, res) => {
     otherUser: {
       id: row.other_user_id,
       name: row.other_user_name,
+      username: row.other_user_username,
       email: row.other_user_email,
       public_key: row.other_user_public_key
     }
