@@ -119,15 +119,20 @@ const Login = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 style={{
                   position: 'absolute',
-                  right: '10px',
+                  right: '12px',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  background: 'none',
+                  background: 'transparent',
                   border: 'none',
                   cursor: 'pointer',
-                  padding: '0',
-                  color: 'inherit',
-                  opacity: 0.7
+                  fontSize: '1.1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '4px',
+                  margin: '0',
+                  outline: 'none',
+                  opacity: 0.8
                 }}
                 title={showPassword ? "Hide password" : "Show password"}
               >
