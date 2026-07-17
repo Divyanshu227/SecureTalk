@@ -6,5 +6,6 @@ export interface Chat {
     id: number;
     name: string;
     email: string;
+    public_key?: string;
   };
 }

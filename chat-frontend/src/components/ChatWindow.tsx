@@ -49,6 +49,8 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
       }
 
       // Then background sync with server
+      const data = await fetchMessages(chat.id);
+      
       // Decrypt messages from server
       const privateKey = await getMyPrivateKey();
       const decryptedData = await Promise.all(data.map(async (msg: Message) => {
@@ -261,7 +263,7 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
     try {
       const updated = await editMessage(chat.id, messageId, editText);
       setMessages((prev) =>
-        prev.map((msg) => (msg.id === messageId ? updated : msg))
+        prev.map((msg) => (msg.id === messageId ? { ...msg, ...updated } : msg))
       );
       setEditingId(null);
       setEditText("");
