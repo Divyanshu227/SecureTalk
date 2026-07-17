@@ -2,7 +2,10 @@ import pg from "pg";
 import dotenv from "dotenv";
 
 dotenv.config();
-const { Pool } = pg;
+const { Pool, types } = pg;
+
+// Tell pg to parse TIMESTAMP WITHOUT TIME ZONE (OID 1114) as UTC instead of local time
+types.setTypeParser(1114, str => new Date(str + "Z"));
 
 const connectionConfig =String( process.env.DATABASE_URL) 
   ? { connectionString: String(process.env.DATABASE_URL) }
