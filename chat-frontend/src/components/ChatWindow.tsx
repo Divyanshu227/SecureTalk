@@ -8,7 +8,8 @@ import {
 } from "../api/message";
 import { useAuth } from "../auth/AuthContext";
 import { useSocket } from "../contexts/SocketContext";
-import { getLocalMessages, saveMessagesLocally, saveSingleMessageLocally, type LocalMessage } from "../db/localDb";
+import { getLocalMessages, saveMessagesLocally, saveSingleMessageLocally, type LocalMessage, getMyPrivateKey } from "../db/localDb";
+import { encryptMessage, decryptMessage } from "../utils/crypto";
 
 interface Props {
   chat: Chat | null;
@@ -48,8 +49,32 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
       }
 
       // Then background sync with server
-      const data = await fetchMessages(chat.id);
-      await saveMessagesLocally(chat.id, data);
+      // Decrypt messages from server
+      const privateKey = await getMyPrivateKey();
+      const decryptedData = await Promise.all(data.map(async (msg: Message) => {
+        const isMyMessage = Number(msg.senderId) === Number(user?.id);
+        
+        // If it's our own message, we can't decrypt it (it's encrypted for the recipient).
+        // Use the local plaintext version if available.
+        if (isMyMessage) {
+           const localMsg = localMsgs?.find(m => m.id === msg.id);
+           if (localMsg) return localMsg;
+           return { ...msg, content: "[Sent Message - Ciphertext]" };
+        }
+        
+        // If it's from the other user, decrypt it
+        if (privateKey) {
+          try {
+             const decryptedContent = await decryptMessage(msg.content, privateKey);
+             if (decryptedContent !== "[Encrypted Message - Decryption Failed]") {
+                return { ...msg, content: decryptedContent };
+             }
+          } catch(e) { }
+        }
+        return msg; // Fallback to plaintext if decryption fails (e.g. old messages)
+      }));
+
+      await saveMessagesLocally(chat.id, decryptedData as Message[]);
       
       const updatedLocalMsgs = await getLocalMessages(chat.id);
       setMessages(updatedLocalMsgs);
@@ -94,32 +119,52 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
 
       // Add message to UI immediately without reloading
       const isMyMessage = Number(data.senderId) === Number(user?.id);
+      if (isMyMessage) {
+        return; // We already added our own message locally in handleSend
+      }
 
-      const newMessage: LocalMessage = {
-        id: data.id || Date.now(),
-        chatId: chat.id,
-        senderId: data.senderId,
-        receiverId: isMyMessage ? chat.otherUser.id : (user?.id || 0),
-        content: data.content,
-        created_at: data.created_at || data.timestamp,
-        syncStatus: 'synced',
+      const processIncomingMessage = async () => {
+        let finalContent = data.content;
+        const privateKey = await getMyPrivateKey();
+        if (privateKey) {
+          try {
+            const decryptedContent = await decryptMessage(data.content, privateKey);
+            if (decryptedContent !== "[Encrypted Message - Decryption Failed]") {
+              finalContent = decryptedContent;
+            }
+          } catch (e) {
+            console.error("Socket message decryption failed", e);
+          }
+        }
+
+        const newMessage: LocalMessage = {
+          id: data.id || Date.now(),
+          chatId: chat.id,
+          senderId: data.senderId,
+          receiverId: user?.id || 0,
+          content: finalContent,
+          created_at: data.created_at || data.timestamp,
+          syncStatus: 'synced',
+        };
+        
+        // Save it locally too
+        await saveSingleMessageLocally(chat.id, newMessage);
+
+        setMessages((prev) => {
+          // Check if message already exists (don't add duplicates)
+          if (prev.some(msg => msg.id === newMessage.id)) {
+            return prev;
+          }
+          return [...prev, newMessage];
+        });
+
+        // Scroll to bottom after state update
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 0);
       };
       
-      // Save it locally too
-      saveSingleMessageLocally(chat.id, newMessage);
-
-      setMessages((prev) => {
-        // Check if message already exists (don't add duplicates)
-        if (prev.some(msg => msg.id === newMessage.id)) {
-          return prev;
-        }
-        return [...prev, newMessage];
-      });
-
-      // Scroll to bottom after state update
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 0);
+      processIncomingMessage();
     };
 
     socket.on("receive_message", handleReceiveMessage);
@@ -156,13 +201,24 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
       setMessages((prev) => [...prev, pendingMsg]);
       scrollToBottom();
 
-      // Send via API to persist the message
-      const newMsg = await sendMessage(chat.id, messageText);
+      // Get recipient public key
+      const recipientPublicKey = chat.otherUser.public_key;
+      let finalContentToSend = messageText;
+      
+      if (recipientPublicKey) {
+         finalContentToSend = await encryptMessage(messageText, recipientPublicKey);
+      } else {
+         console.warn("Recipient has no public key, sending plaintext!");
+      }
+
+      // Send via API to persist the message (sends encrypted text)
+      const newMsg = await sendMessage(chat.id, finalContentToSend);
       console.log("✅ Message sent and saved:", newMsg);
 
-      // Save real message, we should ideally delete the pending one from db 
-      // but for simplicity we'll just reload the messages or update it.
-      await saveSingleMessageLocally(chat.id, newMsg, 'synced');
+      // Save real message locally using our PLAINTEXT
+      const localSyncedMsg = { ...newMsg, content: messageText };
+      await saveSingleMessageLocally(chat.id, localSyncedMsg, 'synced');
+      
       const updatedLocalMsgs = await getLocalMessages(chat.id);
       // Remove temp from local state
       setMessages(updatedLocalMsgs.filter(m => m.id !== tempId));

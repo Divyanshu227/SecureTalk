@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { loginUser, fetchMe } from "../api/auth";
 import { useAuth } from "../auth/AuthContext";
+import { generateKeyPair } from "../utils/crypto";
+import { getMyPrivateKey, saveMyPrivateKey } from "../db/localDb";
 
 type ApiError = {
   response?: {
@@ -26,7 +28,18 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const { token } = await loginUser(email, password);
+      // Check if we already have a key on this device
+      let localPrivateKey = await getMyPrivateKey();
+      let publicKeyBase64: string | undefined;
+
+      if (!localPrivateKey) {
+        // Generate new keys for this device
+        const keyPair = await generateKeyPair();
+        await saveMyPrivateKey(keyPair.privateKey);
+        publicKeyBase64 = keyPair.publicKeyBase64;
+      }
+
+      const { token } = await loginUser(email, password, publicKeyBase64);
       localStorage.setItem("token", token);
       const user = await fetchMe();
       login(token, user);
