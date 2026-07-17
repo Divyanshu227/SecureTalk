@@ -77,8 +77,16 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
     // Also listen for browser-level network restoration
     window.addEventListener('online', syncOutbox);
     
+    // Fallback: poll every 5 seconds in case events fire before network is fully usable
+    const intervalId = setInterval(() => {
+      if (navigator.onLine) {
+        syncOutbox();
+      }
+    }, 5000);
+    
     return () => {
       window.removeEventListener('online', syncOutbox);
+      clearInterval(intervalId);
     };
   }, [isConnected, chat?.id]);
 
