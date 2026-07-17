@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchChats, createChat, fetchUsers } from "../api/chat";
+import { fetchChats, createChat } from "../api/chat";
 import type { Chat as ChatType } from "../types";
 import { getLocalChats, saveChatsLocally, getLocalMessages, getMyPrivateKey } from "../db/localDb";
 import { decryptMessage } from "../utils/crypto";
@@ -9,13 +9,20 @@ import ThemeToggle from "../components/ThemeToggle";
 import { useAuth } from "../auth/AuthContext";
 import { useSocket } from "../contexts/SocketContext";
 import { useNavigate } from "react-router-dom";
+import SearchModal from "../components/SearchModal";
+import ProfileModal from "../components/ProfileModal";
+import InboxModal from "../components/InboxModal";
+import SettingsModal from "../components/SettingsModal";
+import type { User } from "../types";
 
 const Chat = () => {
   const [chats, setChats] = useState<ChatType[]>([]);
   const [activeChat, setActiveChat] = useState<ChatType | null>(null);
-  const [showNewChatModal, setShowNewChatModal] = useState(false);
-  const [users, setUsers] = useState<{ id: number; name: string; email: string }[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showInboxModal, setShowInboxModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const { logout, user } = useAuth();
   const { socket, isConnected } = useSocket();
   const navigate = useNavigate();
@@ -74,17 +81,7 @@ const Chat = () => {
     }
   };
 
-  const loadUsers = async () => {
-    setLoadingUsers(true);
-    try {
-      const data = await fetchUsers();
-      setUsers(data);
-    } catch {
-      console.error("Failed to load users");
-    } finally {
-      setLoadingUsers(false);
-    }
-  };
+
 
   useEffect(() => {
     loadChats();
@@ -171,15 +168,18 @@ const Chat = () => {
             <h3 style={{ margin: 0 }}>Chats</h3>
             <ThemeToggle />
           </div>
-          <button
-            onClick={() => {
-              loadUsers();
-              setShowNewChatModal(true);
-            }}
-          >
-            + New Chat
-          </button>
-          <button onClick={handleLogout} className="secondary" style={{ marginTop: "8px" }}>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "8px" }}>
+            <button onClick={() => setShowSearchModal(true)} style={{ flex: 1 }}>
+              Search
+            </button>
+            <button onClick={() => setShowInboxModal(true)} style={{ flex: 1 }}>
+              Inbox
+            </button>
+            <button onClick={() => setShowSettingsModal(true)} style={{ flex: 1 }} className="secondary">
+              Settings
+            </button>
+          </div>
+          <button onClick={handleLogout} className="secondary" style={{ marginTop: "8px", width: "100%" }}>
             Logout
           </button>
         </div>
@@ -191,43 +191,34 @@ const Chat = () => {
       </div>
       <ChatWindow chat={activeChat} onMessageSent={loadChats} />
 
-      {showNewChatModal && (
-        <>
-          <div className="edit-dialog-overlay" onClick={() => setShowNewChatModal(false)} />
-          <div className="edit-dialog" style={{ minWidth: "350px" }}>
-            <h3>Start a New Chat</h3>
-            {loadingUsers ? (
-              <p style={{ textAlign: "center", color: "#999" }}>Loading users...</p>
-            ) : users.length === 0 ? (
-              <p style={{ textAlign: "center", color: "#999" }}>No other users available</p>
-            ) : (
-              <div style={{ maxHeight: "300px", overflowY: "auto", marginBottom: "16px" }}>
-                {users.map((user) => (
-                  <div
-                    key={user.id}
-                    onClick={() => handleNewChat(user.id)}
-                    style={{
-                      padding: "12px",
-                      borderBottom: "1px solid #e0e0e0",
-                      cursor: "pointer",
-                      transition: "background 0.2s",
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f5f5f5")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                  >
-                    <div style={{ fontWeight: "600", marginBottom: "2px" }}>{user.name}</div>
-                    <div style={{ fontSize: "0.85em", color: "#999" }}>{user.email}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="edit-dialog-actions">
-              <button className="secondary" onClick={() => setShowNewChatModal(false)}>
-                Cancel
-              </button>
-            </div>
-          </div>
-        </>
+      {showSearchModal && (
+        <SearchModal
+          onClose={() => setShowSearchModal(false)}
+          onUserSelect={(u) => {
+            setSelectedUser(u);
+            setShowSearchModal(false);
+            setShowProfileModal(true);
+          }}
+        />
+      )}
+      
+      {showProfileModal && selectedUser && (
+        <ProfileModal
+          user={selectedUser}
+          onClose={() => setShowProfileModal(false)}
+          onMessage={(userId) => {
+            setShowProfileModal(false);
+            handleNewChat(userId);
+          }}
+        />
+      )}
+
+      {showInboxModal && (
+        <InboxModal onClose={() => setShowInboxModal(false)} />
+      )}
+
+      {showSettingsModal && (
+        <SettingsModal onClose={() => setShowSettingsModal(false)} />
       )}
     </div>
   );

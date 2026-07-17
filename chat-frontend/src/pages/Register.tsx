@@ -13,6 +13,7 @@ type ApiError = {
 
 const Register = () => {
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -36,7 +37,7 @@ const Register = () => {
       const encryptedPrivateKey = await encryptPrivateKeyWithPassword(privateKey, password, email);
 
       // 3. Register user with keys
-      await registerUser(name, email, password, publicKeyBase64, encryptedPrivateKey);
+      await registerUser(name, username, email, password, publicKeyBase64, encryptedPrivateKey);
       setSuccess("Registration successful! Redirecting to login...");
       setTimeout(() => navigate("/login"), 2000);
     } catch (err: unknown) {
@@ -63,6 +64,17 @@ const Register = () => {
               placeholder="Your name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Username</label>
+            <input
+              type="text"
+              placeholder="e.g. john_123"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
             />
           </div>
