@@ -348,9 +348,10 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
                       {msg.syncStatus === 'pending' && <span style={{fontSize: '0.8em', marginLeft: '5px'}}>⏳</span>}
                     </div>
                     <div className="message-time">
-                      {new Date(msg.created_at || "").toLocaleTimeString([], {
+                      {new Date(msg.created_at || "").toLocaleTimeString("en-IN", {
                         hour: "2-digit",
                         minute: "2-digit",
+                        timeZone: "Asia/Kolkata"
                       })}
                     </div>
                   </div>

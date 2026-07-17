@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { fetchChats, createChat, fetchUsers } from "../api/chat";
 import type { Chat as ChatType } from "../types";
-import { getLocalChats, saveChatsLocally } from "../db/localDb";
+import { getLocalChats, saveChatsLocally, getLocalMessages, getMyPrivateKey } from "../db/localDb";
+import { decryptMessage } from "../utils/crypto";
 import ChatList from "../components/ChatList.tsx";
 import ChatWindow from "../components/ChatWindow.tsx";
 import ThemeToggle from "../components/ThemeToggle";
@@ -31,6 +32,26 @@ const Chat = () => {
       const data = await fetchChats();
       console.log("Chats loaded from server:", data);
       
+      // Decrypt last messages or pull from local DB
+      const privateKey = await getMyPrivateKey();
+      for (const c of data) {
+        const localMsgs = await getLocalMessages(c.id);
+        if (localMsgs && localMsgs.length > 0) {
+          c.lastMessage = localMsgs[localMsgs.length - 1].content;
+        } else if (c.lastMessage && privateKey) {
+          try {
+            const decrypted = await decryptMessage(c.lastMessage, privateKey);
+            if (decrypted !== "[Encrypted Message - Decryption Failed]") {
+              c.lastMessage = decrypted;
+            } else {
+              c.lastMessage = "Encrypted message";
+            }
+          } catch {
+            c.lastMessage = "Encrypted message";
+          }
+        }
+      }
+
       // Update local storage and state with fresh data
       await saveChatsLocally(data);
       setChats(data);
@@ -97,6 +118,21 @@ const Chat = () => {
     try {
       const { chatId } = await createChat(userId);
       const data = await fetchChats();
+      
+      const privateKey = await getMyPrivateKey();
+      for (const c of data) {
+        const localMsgs = await getLocalMessages(c.id);
+        if (localMsgs && localMsgs.length > 0) {
+          c.lastMessage = localMsgs[localMsgs.length - 1].content;
+        } else if (c.lastMessage && privateKey) {
+          try {
+            const decrypted = await decryptMessage(c.lastMessage, privateKey);
+            if (decrypted !== "[Encrypted Message - Decryption Failed]") c.lastMessage = decrypted;
+            else c.lastMessage = "Encrypted message";
+          } catch { c.lastMessage = "Encrypted message"; }
+        }
+      }
+
       await saveChatsLocally(data);
       setChats(data);
       setShowNewChatModal(false);
