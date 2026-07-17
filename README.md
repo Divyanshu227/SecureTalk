@@ -91,6 +91,99 @@ Chatapp/
 ```
 
 ## 🚀 Quick Start
+# 💬 Full-Stack Chat Application
+
+A modern, feature-rich chat application built with React, TypeScript, Node.js, and PostgreSQL. Send messages, edit, delete, and manage conversations in a beautiful, responsive interface.
+
+## 🌟 Key Features
+
+### 📱 User Authentication
+- Register new accounts with secure password hashing (bcrypt)
+- Login with email and password
+- JWT token-based authentication
+- Protected routes and API endpoints
+- Auto-logout functionality
+
+### 💬 Chat Functionality
+- Create new conversations with other users
+- View all active chats in a sidebar
+- Send real-time messages
+- View conversation history
+- Chat persistence across sessions
+- Automatic duplicate chat prevention
+
+### ✏️ Message Management
+- **Send**: Send messages with Enter key support
+- **Edit**: Update sent messages anytime
+- **Delete**: Remove messages permanently
+- **View**: See all messages with timestamps
+- **Edited Indicator**: Visual feedback when messages are modified
+- **Message Ownership**: Only your messages can be edited/deleted
+
+### 🎨 Beautiful UI/UX
+- Modern gradient design (Purple theme)
+- Smooth animations and transitions
+- Responsive layout (Desktop, Tablet, Mobile)
+- Dark mode ready CSS
+- Modal dialogs for user interactions
+- Intuitive user interface
+- Real-time visual feedback
+
+## 🛠️ Tech Stack
+
+### Frontend
+```
+- React 18 (TypeScript)
+- Vite (Fast bundling)
+- React Router (Navigation)
+- Axios (HTTP Client)
+- CSS3 (Custom styling)
+```
+
+### Backend
+```
+- Node.js + Express.js
+- PostgreSQL (Database)
+- JWT (Authentication)
+- Bcrypt (Password hashing)
+- CORS (Cross-origin support)
+- Nodemon (Development)
+```
+
+## 📁 Project Structure
+
+```
+Chatapp/
+├── Backend/                    # Node.js/Express server
+│   ├── src/
+│   │   ├── app.js
+│   │   ├── server.js
+│   │   ├── config/db.js
+│   │   ├── controllers/
+│   │   ├── middleware/
+│   │   ├── routes/
+│   │   └── utils/
+│   └── package.json
+│
+├── chat-frontend/              # React application
+│   ├── src/
+│   │   ├── App.tsx
+│   │   ├── main.tsx
+│   │   ├── index.css
+│   │   ├── api/
+│   │   ├── auth/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   └── types/
+│   └── package.json
+│
+├── PROJECT_SUMMARY.md          # Comprehensive feature guide
+├── QUICKSTART.md               # Setup and installation
+├── FEATURES_GUIDE.md           # UI/UX and user guide
+└── README.md                   # This file
+```
+
+## 🚀 Quick Start
 
 ### Prerequisites
 - Node.js v14+
@@ -103,42 +196,28 @@ Chatapp/
 -- Users Table
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
-  name VARCHAR(255),
-  email VARCHAR(255) UNIQUE NOT NULL,
-  password VARCHAR(255) NOT NULL,
+  name VARCHAR(100),
+  email VARCHAR(100) UNIQUE NOT NULL,
+  password VARCHAR(100) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Chats Table
-CREATE TABLE chats (
-  id SERIAL PRIMARY KEY,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Chat Members Table
-CREATE TABLE chat_members (
-  id SERIAL PRIMARY KEY,
-  chat_id INTEGER REFERENCES chats(id) ON DELETE CASCADE,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(chat_id, user_id)
+-- Chat Table
+CREATE TABLE chat (
+  chatid SERIAL PRIMARY KEY,
+  userid1 INTEGER REFERENCES users(id),
+  userid2 INTEGER REFERENCES users(id)
 );
 
 -- Messages Table
 CREATE TABLE messages (
-  id SERIAL PRIMARY KEY,
-  chat_id INTEGER REFERENCES chats(id) ON DELETE CASCADE,
-  sender_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  messageid SERIAL PRIMARY KEY,
+  chatid INTEGER REFERENCES chat(chatid),
+  senderid INTEGER REFERENCES users(id),
+  receiverid INTEGER REFERENCES users(id),
   content TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
--- Create indexes for performance
-CREATE INDEX idx_chat_members_user ON chat_members(user_id);
-CREATE INDEX idx_chat_members_chat ON chat_members(chat_id);
-CREATE INDEX idx_messages_chat ON messages(chat_id);
-CREATE INDEX idx_users_email ON users(email);
 ```
 
 ### 2. Backend Setup
