@@ -65,6 +65,10 @@ export const saveSingleMessageLocally = async (chatId: number, message: Message,
   return localMsg;
 };
 
+export const deleteMessageLocally = async (messageId: number) => {
+  await localDb.messages.delete(messageId);
+};
+
 export const clearLocalDb = async () => {
   await localDb.chats.clear();
   await localDb.messages.clear();

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState } from "react";
 import type { ReactNode } from "react";
 import type { AuthContextType, User } from "../types";
+import { clearLocalDb } from "../db/localDb";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // explanation: This file defines an authentication context for a React application. It provides a way to manage and access authentication state (like the current user and token) throughout the app using React's Context API.
@@ -26,6 +27,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem("user");
     setToken(null);
     setUser(null);
+    clearLocalDb().catch(console.error);
   };
 
   const value: AuthContextType = {

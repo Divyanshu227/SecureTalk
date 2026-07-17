@@ -8,7 +8,7 @@ import {
 } from "../api/message";
 import { useAuth } from "../auth/AuthContext";
 import { useSocket } from "../contexts/SocketContext";
-import { getLocalMessages, saveMessagesLocally, saveSingleMessageLocally, type LocalMessage, getMyPrivateKey } from "../db/localDb";
+import { getLocalMessages, saveMessagesLocally, saveSingleMessageLocally, deleteMessageLocally, type LocalMessage, getMyPrivateKey } from "../db/localDb";
 import { encryptMessage, decryptMessage } from "../utils/crypto";
 
 interface Props {
@@ -219,9 +219,10 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
       const localSyncedMsg = { ...newMsg, content: messageText };
       await saveSingleMessageLocally(chat.id, localSyncedMsg, 'synced');
       
+      // Remove temp from local DB and state
+      await deleteMessageLocally(tempId);
       const updatedLocalMsgs = await getLocalMessages(chat.id);
-      // Remove temp from local state
-      setMessages(updatedLocalMsgs.filter(m => m.id !== tempId));
+      setMessages(updatedLocalMsgs);
 
       onMessageSent?.();
       scrollToBottom();
@@ -273,8 +274,19 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
     if (!chat) return;
 
     try {
-      await deleteMessage(chat.id, messageId);
+      // Delete locally first (optimistic UI update)
+      await deleteMessageLocally(messageId);
       setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+
+      try {
+        // Delete from server
+        await deleteMessage(chat.id, messageId);
+      } catch (err: any) {
+        // If it's 404 (already deleted from server), ignore the error
+        if (err?.response?.status !== 404) {
+          throw err;
+        }
+      }
     } catch {
       console.error("Failed to delete message");
     }
