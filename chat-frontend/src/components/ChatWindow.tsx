@@ -30,9 +30,12 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
 
   // Drain outbox when connectivity is restored
   useEffect(() => {
-    if (!isConnected || !chat) return;
+    if (!chat) return;
 
     const syncOutbox = async () => {
+      // Don't try to sync if browser knows it's offline
+      if (!navigator.onLine) return;
+      
       const pending = await getOutboxForChat(chat.id);
       if (pending.length === 0) return;
       console.log(`🔄 Syncing ${pending.length} pending message(s)...`);
@@ -66,7 +69,17 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
       onMessageSent?.();
     };
 
-    syncOutbox();
+    // Try sync immediately if we think we are connected
+    if (isConnected && navigator.onLine) {
+      syncOutbox();
+    }
+
+    // Also listen for browser-level network restoration
+    window.addEventListener('online', syncOutbox);
+    
+    return () => {
+      window.removeEventListener('online', syncOutbox);
+    };
   }, [isConnected, chat?.id]);
 
   const scrollToBottom = useCallback(() => {
