@@ -4,7 +4,7 @@ import pool from "../config/db.js";
 // This is used for registrering users, logging in, and fetching user data.
 export const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, publicKey } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ message: "Missing fields" });
@@ -22,8 +22,8 @@ export const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await pool.query(
-      "INSERT INTO users (name, email, password) VALUES ($1,$2,$3)",
-      [name, email, hashedPassword]
+      "INSERT INTO users (name, email, password, public_key) VALUES ($1,$2,$3,$4)",
+      [name, email, hashedPassword, publicKey || null]
     );
 
     res.status(201).json({ message: "User registered successfully" });
@@ -35,7 +35,7 @@ export const register = async (req, res) => {
 // login function to authenticate users and provide JWT tokens
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, publicKey } = req.body;
 
     const result = await pool.query(
       "SELECT * FROM users WHERE email=$1",
@@ -54,6 +54,11 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    // Update public key if provided on login (new device)
+    if (publicKey && publicKey !== user.public_key) {
+      await pool.query("UPDATE users SET public_key = $1 WHERE id = $2", [publicKey, user.id]);
+    }
+
     const token = jwt.sign(
       { id: user.id, email: user.email },
       process.env.JWT_SECRET,
@@ -70,7 +75,7 @@ export const login = async (req, res) => {
 export const getMe = async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, name, email FROM users WHERE id=$1",
+      "SELECT id, name, email, public_key FROM users WHERE id=$1",
       [req.user.id]
     );
 
@@ -89,7 +94,7 @@ export const getMe = async (req, res) => {
 export const getAllUsers = async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, name, email FROM users WHERE id != $1 ORDER BY name",
+      "SELECT id, name, email, public_key FROM users WHERE id != $1 ORDER BY name",
       [req.user.id]
     );
 
