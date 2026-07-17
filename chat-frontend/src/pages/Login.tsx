@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { loginUser, fetchMe, updatePublicKey, backupKey } from "../api/auth";
 import { useAuth } from "../auth/AuthContext";
-import { generateKeyPair, decryptPrivateKeyWithPassword, encryptPrivateKeyWithPassword } from "../utils/crypto";
+import { generateKeyPair, decryptPrivateKeyWithPassword, encryptPrivateKeyWithPassword, derivePublicKeyBase64 } from "../utils/crypto";
 import { getMyPrivateKey, saveMyPrivateKey } from "../db/localDb";
 
 type ApiError = {
@@ -41,11 +41,20 @@ const Login = () => {
         console.log("Local private key found. Backing it up to server to ensure history is preserved...");
         const newEncryptedKey = await encryptPrivateKeyWithPassword(localPrivateKey, password, email);
         await backupKey(newEncryptedKey);
+        
+        // Also ensure the public key matches! (Fixes mismatch if another device generated a new key)
+        const restoredPublicKey = await derivePublicKeyBase64(localPrivateKey);
+        await updatePublicKey(restoredPublicKey);
       } else if (encryptedPrivateKey) {
         // No local key, but server has a backup! (Cross-device login)
         try {
           const decryptedKey = await decryptPrivateKeyWithPassword(encryptedPrivateKey, password, email);
           await saveMyPrivateKey(user.id, decryptedKey);
+          
+          // Also ensure public key matches
+          const restoredPublicKey = await derivePublicKeyBase64(decryptedKey);
+          await updatePublicKey(restoredPublicKey);
+          
           console.log("Successfully restored private key from server backup!");
         } catch (decryptErr) {
           console.error("Failed to decrypt private key backup. Password might be wrong or data corrupted.", decryptErr);

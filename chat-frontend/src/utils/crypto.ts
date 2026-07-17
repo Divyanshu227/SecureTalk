@@ -52,6 +52,30 @@ export async function generateKeyPair(): Promise<{ privateKey: CryptoKey; public
 }
 
 /**
+ * Derives the Base64 SPKI public key from an existing CryptoKey private key.
+ * This is useful for restoring the public key if it gets out of sync on the server.
+ */
+export async function derivePublicKeyBase64(privateKey: CryptoKey): Promise<string> {
+  const jwk = await window.crypto.subtle.exportKey("jwk", privateKey);
+  const publicKey = await window.crypto.subtle.importKey(
+    "jwk",
+    {
+      kty: jwk.kty,
+      e: jwk.e,
+      n: jwk.n,
+      alg: jwk.alg,
+      ext: true,
+    },
+    { name: "RSA-OAEP", hash: "SHA-256" },
+    true,
+    ["encrypt"]
+  );
+  
+  const exportedPublicKey = await window.crypto.subtle.exportKey("spki", publicKey);
+  return bufferToBase64(exportedPublicKey);
+}
+
+/**
  * Imports a Base64 SPKI public key and uses it to encrypt text.
  */
 export async function encryptMessage(text: string, publicKeyBase64: string): Promise<string> {
