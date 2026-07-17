@@ -56,15 +56,22 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
       const decryptedData = await Promise.all(data.map(async (msg: Message) => {
         const isMyMessage = Number(msg.senderId) === Number(user?.id);
         
-        // If it's our own message, we can't decrypt it (it's encrypted for the recipient).
-        // Use the local plaintext version if available.
+        // If it's our own message, try to decrypt senderContent with our own key
         if (isMyMessage) {
+           // First try local plaintext copy
            const localMsg = localMsgs?.find(m => m.id === msg.id);
            if (localMsg) return localMsg;
+           // Then try decrypting senderContent (self-encrypted copy)
+           if (privateKey && msg.senderContent) {
+             try {
+               const decryptedContent = await decryptMessage(msg.senderContent, privateKey);
+               return { ...msg, content: decryptedContent };
+             } catch(e) { /* fallthrough */ }
+           }
            return { ...msg, content: "[Sent Message - Ciphertext]" };
         }
         
-        // If it's from the other user, decrypt it
+        // If it's from the other user, decrypt it with our private key
         if (privateKey) {
           try {
              const decryptedContent = await decryptMessage(msg.content, privateKey);
@@ -202,9 +209,10 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
       setMessages((prev) => [...prev, pendingMsg]);
       scrollToBottom();
 
-      // Get recipient public key
+      // Get recipient public key and our own public key
       const recipientPublicKey = chat.otherUser.public_key;
       let finalContentToSend = messageText;
+      let senderContentToSend: string | undefined;
       
       if (recipientPublicKey) {
          finalContentToSend = await encryptMessage(messageText, recipientPublicKey);
@@ -212,8 +220,13 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
          console.warn("Recipient has no public key, sending plaintext!");
       }
 
-      // Send via API to persist the message (sends encrypted text)
-      const newMsg = await sendMessage(chat.id, finalContentToSend);
+      // Self-encrypt the message so the sender can decrypt it after re-login
+      if (user?.public_key) {
+        senderContentToSend = await encryptMessage(messageText, user.public_key);
+      }
+
+      // Send via API to persist the message (sends encrypted text + self-encrypted copy)
+      const newMsg = await sendMessage(chat.id, finalContentToSend, senderContentToSend);
       console.log("✅ Message sent and saved:", newMsg);
 
       // Save real message locally using our PLAINTEXT

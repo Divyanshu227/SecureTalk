@@ -8,10 +8,12 @@ export const fetchMessages = async (chatId: number): Promise<Message[]> => {
 
 export const sendMessage = async (
   chatId: number,
-  content: string
+  content: string,
+  senderContent?: string
 ): Promise<Message> => {
   const res = await api.post<Message>(`/chats/${chatId}/messages`, {
     content,
+    senderContent,
   });
   console.log("Message sent:", res.data);
   return res.data;

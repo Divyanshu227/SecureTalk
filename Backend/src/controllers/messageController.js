@@ -2,7 +2,7 @@ import pool from "../config/db.js";
 // This is used for sending, fetching, editing, and deleting messages.
 export const sendMessage = async (req, res) => {
   const { chatId } = req.params;
-  const { content } = req.body;
+  const { content, senderContent } = req.body;
 // explanation: This function handles sending a new message in a specific chat. It inserts the message into the messages table with the chat ID, sender ID (from the authenticated user), and content.
   try {
 
@@ -24,12 +24,11 @@ export const sendMessage = async (req, res) => {
     const receiverId = req.user.id === userid1 ? userid2 : userid1;
 
     const insertRes = await pool.query(
-      "INSERT INTO messages (chatid, senderid,receiverid, content) VALUES ($1,$2,$3,$4) RETURNING messageid, chatid as chat_id, senderid as senderId, content, created_at",
-      [chatId, req.user.id, receiverId, content]
+      "INSERT INTO messages (chatid, senderid, receiverid, content, sender_content) VALUES ($1,$2,$3,$4,$5) RETURNING messageid, chatid as chat_id, senderid as senderId, content, sender_content, created_at",
+      [chatId, req.user.id, receiverId, content, senderContent || null]
     );
 
     const inserted = insertRes.rows[0];
-    // Inserted row (debug removed)
 
     // Build response using known variables (avoid relying on DB camelCase aliases)
     res.json({
@@ -38,6 +37,7 @@ export const sendMessage = async (req, res) => {
       senderId: req.user.id,
       receiverId: receiverId,
       content: inserted.content,
+      senderContent: inserted.sender_content,
       created_at: inserted.created_at,
       isSent: true,
     });
@@ -76,6 +76,7 @@ export const getMessages = async (req, res) => {
             m.senderid as "senderId",
             CASE WHEN m.senderid = $2 THEN true ELSE false END as "isSent",
             m.content,
+            m.sender_content as "senderContent",
             m.created_at
       FROM messages m
       WHERE m.chatid = $1
