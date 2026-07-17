@@ -28,9 +28,11 @@ export default function ProfileModal({ user, onClose, onMessage }: ProfileModalP
     try {
       await sendConnectionRequest(user.id);
       setStatus('pending_sent');
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      alert("Failed to send connection request");
+      const apiErr = err as { response?: { data?: { message?: string } } };
+      const msg = apiErr?.response?.data?.message || "Failed to send connection request";
+      alert(msg);
     }
   };
 

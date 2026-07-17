@@ -33,7 +33,7 @@ const Login = () => {
       localStorage.setItem("token", token);
       const user = await fetchMe();
 
-      let localPrivateKey = await getMyPrivateKey(user.id);
+      const localPrivateKey = await getMyPrivateKey(user.id);
 
       if (localPrivateKey) {
         // User already has a local key on this device. 

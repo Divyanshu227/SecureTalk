@@ -3,26 +3,31 @@ import pool from "../config/db.js";
 // Send a connection request
 export const sendRequest = async (req, res) => {
   try {
-    const { receiverId } = req.body;
+    const receiverId = parseInt(req.body.receiverId, 10);
+    const senderId = req.user.id;
     
-    if (receiverId === req.user.id) {
+    if (!receiverId || isNaN(receiverId)) {
+      return res.status(400).json({ message: "Invalid receiverId" });
+    }
+
+    if (receiverId === senderId) {
       return res.status(400).json({ message: "Cannot send request to yourself" });
     }
 
     // Check if already connected
     const existingConn = await pool.query(
       "SELECT 1 FROM connections WHERE (user1=$1 AND user2=$2) OR (user1=$2 AND user2=$1)",
-      [req.user.id, receiverId]
+      [senderId, receiverId]
     );
 
     if (existingConn.rowCount > 0) {
       return res.status(409).json({ message: "Already connected" });
     }
 
-    // Check if request already exists
+    // Check if request already exists in either direction
     const existingReq = await pool.query(
       "SELECT status FROM connection_requests WHERE (sender_id=$1 AND receiver_id=$2) OR (sender_id=$2 AND receiver_id=$1)",
-      [req.user.id, receiverId]
+      [senderId, receiverId]
     );
 
     if (existingReq.rowCount > 0) {
@@ -31,13 +36,13 @@ export const sendRequest = async (req, res) => {
 
     await pool.query(
       "INSERT INTO connection_requests (sender_id, receiver_id) VALUES ($1, $2)",
-      [req.user.id, receiverId]
+      [senderId, receiverId]
     );
 
     res.status(201).json({ message: "Connection request sent" });
   } catch (err) {
     console.error("sendRequest error:", err.message);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: err.message || "Server error" });
   }
 };
 
@@ -104,7 +109,10 @@ export const getPendingRequests = async (req, res) => {
 // Check connection status with a specific user
 export const getConnectionStatus = async (req, res) => {
   try {
-    const { otherUserId } = req.params;
+    const otherUserId = parseInt(req.params.otherUserId, 10);
+    if (!otherUserId || isNaN(otherUserId)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
     
     // Check if connected
     const conn = await pool.query(

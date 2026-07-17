@@ -128,7 +128,7 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
              try {
                const decryptedContent = await decryptMessage(msg.senderContent, privateKey);
                return { ...msg, content: decryptedContent };
-             } catch(e) { /* fallthrough */ }
+             } catch { /* fallthrough */ }
            }
            return { ...msg, content: "[Sent Message - Ciphertext]" };
         }
@@ -138,8 +138,9 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
           try {
              const decryptedContent = await decryptMessage(msg.content, privateKey);
              return { ...msg, content: decryptedContent };
-          } catch(err: any) {
-             socket?.emit("client_error", { context: "ChatWindow.tsx loadMessages", message: err.message, stack: err.stack, content: msg.content });
+          } catch(err: unknown) {
+             const e = err as { message?: string; stack?: string };
+             socket?.emit("client_error", { context: "ChatWindow.tsx loadMessages", message: e.message, stack: e.stack, content: msg.content });
           }
         }
         return msg; // Fallback to plaintext if decryption fails (e.g. old messages)
@@ -201,9 +202,10 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
           try {
             const decryptedContent = await decryptMessage(data.content, privateKey);
             finalContent = decryptedContent;
-          } catch (err: any) {
+          } catch (err: unknown) {
+            const e = err as { message?: string; stack?: string };
             console.error("Socket message decryption failed", err);
-            socket?.emit("client_error", { context: "ChatWindow.tsx processIncomingMessage", message: err.message, stack: err.stack, content: data.content });
+            socket?.emit("client_error", { context: "ChatWindow.tsx processIncomingMessage", message: e.message, stack: e.stack, content: data.content });
           }
         }
 
@@ -370,9 +372,10 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
       try {
         // Delete from server
         await deleteMessage(chat.id, messageId);
-      } catch (err: any) {
+      } catch (err: unknown) {
         // If it's 404 (already deleted from server), ignore the error
-        if (err?.response?.status !== 404) {
+        const e = err as { response?: { status?: number } };
+        if (e?.response?.status !== 404) {
           throw err;
         }
       }

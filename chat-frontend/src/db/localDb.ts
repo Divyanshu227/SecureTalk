@@ -107,7 +107,7 @@ export const clearLocalDb = async () => {
 };
 
 export const getMyPrivateKey = async (userId: number): Promise<CryptoKey | undefined> => {
-  let keyEntry = await localDb.keys.get(`privateKey_${userId}`);
+  const keyEntry = await localDb.keys.get(`privateKey_${userId}`);
   if (keyEntry) {
     return keyEntry.privateKey;
   }
