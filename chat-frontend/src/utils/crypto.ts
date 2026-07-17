@@ -223,3 +223,78 @@ export async function decryptPrivateKeyWithPassword(
     ["decrypt"]
   );
 }
+
+// -----------------------------------------------------------------------------
+// HYBRID ENCRYPTION FOR MEDIA SUPPORT
+// -----------------------------------------------------------------------------
+
+/**
+ * Encrypts a File using a one-time AES-GCM key.
+ * Returns the encrypted Blob, the Base64 AES key, and Base64 IV.
+ */
+export async function encryptFile(file: File): Promise<{ encryptedBlob: Blob; aesKeyBase64: string; ivBase64: string }> {
+  // 1. Generate one-time AES-GCM key
+  const aesKey = await window.crypto.subtle.generateKey(
+    { name: "AES-GCM", length: 256 },
+    true,
+    ["encrypt", "decrypt"]
+  );
+
+  // 2. Read file as ArrayBuffer
+  const arrayBuffer = await file.arrayBuffer();
+
+  // 3. Generate IV and encrypt
+  const iv = window.crypto.getRandomValues(new Uint8Array(12));
+  const encryptedBuffer = await window.crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    aesKey,
+    arrayBuffer
+  );
+
+  // 4. Export the raw key to Base64 so we can send it
+  const rawKey = await window.crypto.subtle.exportKey("raw", aesKey);
+  const aesKeyBase64 = bufferToBase64(rawKey);
+  const ivBase64 = bufferToBase64(iv.buffer);
+
+  // 5. Create Blob from encrypted buffer
+  const encryptedBlob = new Blob([encryptedBuffer], { type: "application/octet-stream" });
+
+  return { encryptedBlob, aesKeyBase64, ivBase64 };
+}
+
+/**
+ * Decrypts a Blob using the provided AES-GCM key and IV in Base64 format.
+ * Returns the decrypted Blob with the appropriate MIME type.
+ */
+export async function decryptFile(
+  encryptedBlob: Blob,
+  aesKeyBase64: string,
+  ivBase64: string,
+  mimeType: string
+): Promise<Blob> {
+  // 1. Convert Base64 back to buffers
+  const rawKeyBuffer = base64ToBuffer(aesKeyBase64);
+  const ivBuffer = base64ToBuffer(ivBase64);
+
+  // 2. Import the AES key
+  const aesKey = await window.crypto.subtle.importKey(
+    "raw",
+    rawKeyBuffer,
+    "AES-GCM",
+    true,
+    ["decrypt"]
+  );
+
+  // 3. Read encrypted Blob as ArrayBuffer
+  const encryptedBuffer = await encryptedBlob.arrayBuffer();
+
+  // 4. Decrypt
+  const decryptedBuffer = await window.crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: new Uint8Array(ivBuffer) },
+    aesKey,
+    encryptedBuffer
+  );
+
+  // 5. Create decrypted Blob
+  return new Blob([decryptedBuffer], { type: mimeType });
+}

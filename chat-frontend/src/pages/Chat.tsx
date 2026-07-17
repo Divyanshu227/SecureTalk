@@ -13,6 +13,7 @@ import SearchModal from "../components/SearchModal";
 import ProfileModal from "../components/ProfileModal";
 import InboxModal from "../components/InboxModal";
 import SettingsModal from "../components/SettingsModal";
+import AppSidebar from "../components/AppSidebar";
 import type { User } from "../types";
 
 const Chat = () => {
@@ -163,35 +164,49 @@ const Chat = () => {
   };
 
   return (
-    <div className="chat-container">
-      <div className="chat-sidebar">
-        <div className="chat-sidebar-header">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-            <h3 style={{ margin: 0 }}>Chats</h3>
+    <div className="app-layout">
+      <AppSidebar onSettingsClick={() => setShowSettingsModal(true)} />
+
+      <div className="chat-list-panel glass-panel">
+        <div className="chat-list-header">
+          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+            <h2>Chats</h2>
             <ThemeToggle />
           </div>
-          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "8px" }}>
-            <button onClick={() => setShowSearchModal(true)} style={{ flex: 1 }}>
-              Search
-            </button>
-            <button onClick={() => setShowInboxModal(true)} style={{ flex: 1 }}>
-              Inbox
-            </button>
-            <button onClick={() => setShowSettingsModal(true)} style={{ flex: 1 }} className="secondary">
-              Settings
-            </button>
-          </div>
-          <button onClick={handleLogout} className="secondary" style={{ marginTop: "8px", width: "100%" }}>
-            Logout
+          <button className="icon-btn" onClick={() => setShowSearchModal(true)}>
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
           </button>
         </div>
+
+        <div className="search-box" onClick={() => setShowSearchModal(true)}>
+          <svg className="search-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          <input type="text" placeholder="Search by username..." readOnly />
+        </div>
+
+        <div className="filter-pills">
+          <div className="filter-pill active">All</div>
+          <div className="filter-pill" onClick={() => setShowInboxModal(true)}>Inbox</div>
+          <div className="filter-pill">Groups</div>
+          <div className="filter-pill">DMs</div>
+        </div>
+
+        <div className="section-title">Messages</div>
         <ChatList
           chats={chats}
           activeChat={activeChat}
           onSelect={setActiveChat}
         />
+        
+        <div style={{ padding: "16px" }}>
+          <button onClick={handleLogout} className="secondary" style={{ width: "100%", fontSize: "0.85rem" }}>
+            Logout
+          </button>
+        </div>
       </div>
-      <ChatWindow chat={activeChat} onMessageSent={loadChats} />
+
+      <div className="chat-window glass-panel">
+        <ChatWindow chat={activeChat} onMessageSent={loadChats} />
+      </div>
 
       {showSearchModal && (
         <SearchModal

@@ -9,7 +9,9 @@ import {
 import { useAuth } from "../auth/AuthContext";
 import { useSocket } from "../contexts/SocketContext";
 import { getLocalMessages, saveMessagesLocally, saveSingleMessageLocally, deleteMessageLocally, type LocalMessage, getMyPrivateKey, addToOutbox, getOutboxForChat, removeFromOutbox } from "../db/localDb";
-import { encryptMessage, decryptMessage } from "../utils/crypto";
+import { encryptMessage, decryptMessage, encryptFile } from "../utils/crypto";
+import { uploadFile } from "../api/upload";
+import MediaMessage from "./MediaMessage";
 
 interface Props {
   chat: Chat | null;
@@ -22,8 +24,10 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { user } = useAuth();
   const { socket, isConnected } = useSocket();
@@ -249,11 +253,12 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
     };
   }, [socket, chat?.id, isConnected]);
 
-  const handleSend = async () => {
-    if (!text.trim() || !chat) return;
+  const handleSend = async (overrideText?: string) => {
+    const textToSend = overrideText || text;
+    if (!textToSend.trim() || !chat) return;
 
-    const messageText = text.trim();
-    setText("");
+    const messageText = textToSend.trim();
+    if (!overrideText) setText("");
 
     try {
       // Create pending message
@@ -384,6 +389,35 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
     }
   };
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !chat) return;
+
+    setUploading(true);
+    try {
+      // 1. Encrypt file with a one-time AES key
+      const { encryptedBlob, aesKeyBase64, ivBase64 } = await encryptFile(file);
+      
+      // 2. Upload the encrypted blob
+      const url = await uploadFile(encryptedBlob, file.name + ".enc");
+      
+      // 3. Construct media message payload
+      const mediaPayload = `[MEDIA]:${url}:${aesKeyBase64}:${ivBase64}:${file.type}:${file.name}`;
+      
+      // 4. Send as normal message
+      await handleSend(mediaPayload);
+    } catch (err) {
+      console.error("Failed to upload and send file:", err);
+      alert("Failed to send file. Please try again.");
+    } finally {
+      setUploading(false);
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -396,15 +430,61 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
   }
 
   return (
-    <div className="chat-main">
+    <>
       <div className="chat-header">
-        <h3>{chat.otherUser.name}</h3>
-        <span style={{ fontSize: "0.9em", opacity: 0.8 }}>
-          {chat.otherUser.email}
-        </span>
+        <div className="chat-header-user">
+          <div style={{ position: "relative" }}>
+            <div className="user-avatar" style={{ background: "linear-gradient(135deg, #FF6B6B, #8B3DFF)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", width: "40px", height: "40px" }}>
+              {chat.otherUser.name?.[0]?.toUpperCase()}
+            </div>
+            <div className="online-indicator"></div>
+          </div>
+          <div>
+            <div style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: "4px" }}>
+              {chat.otherUser.name}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--accent-blue)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            </div>
+            <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Online</div>
+          </div>
+        </div>
+        
+        <div className="chat-header-actions">
+          <button className="icon-btn"><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg></button>
+          <button className="icon-btn"><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
+          <button className="icon-btn"><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
+          <button className="icon-btn"><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" /></svg></button>
+        </div>
       </div>
 
       <div className="chat-messages" ref={messagesContainerRef}>
+        <div className="inline-profile-banner">
+          <div className="avatar-large" style={{ background: "linear-gradient(135deg, #FF6B6B, #8B3DFF)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "2rem" }}>
+            {chat.otherUser.name?.[0]?.toUpperCase()}
+          </div>
+          <div style={{ fontWeight: 600, fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "4px" }}>
+            {chat.otherUser.name}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--accent-blue)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          </div>
+          <div style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>{chat.otherUser.email}</div>
+          
+          <div className="stats-row">
+            <div className="stat-item">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+              <span><strong>0</strong> Mutuals</span>
+            </div>
+            <div className="stat-item">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+              <span><strong>0</strong> Groups</span>
+            </div>
+          </div>
+          
+          <button className="secondary" style={{ padding: "6px 16px", borderRadius: "20px", fontSize: "0.85rem" }}>View profile</button>
+        </div>
+
+        <div style={{ textAlign: "center", margin: "10px 0" }}>
+          <span style={{ background: "rgba(255, 255, 255, 0.05)", padding: "4px 12px", borderRadius: "10px", fontSize: "0.8rem", color: "var(--text-secondary)" }}>Today</span>
+        </div>
+
         {loading ? (
           <div className="chat-empty">Loading messages...</div>
         ) : messages.length === 0 ? (
@@ -427,24 +507,28 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
               // Render message with appropriate styling
               // CSS class "sent" positions on right, "received" positions on left
               return (
-                <div
-                  key={msg.id}
-                  className={`message ${isSent ? "sent" : "received"}`}
-                  style={{
-                    justifyContent: isSent ? "flex-end" : "flex-start",
-                  }}
-                >
-                  <div className="message-bubble">
-                    <div className="message-content">
-                      {msg.content}
-                      {msg.syncStatus === 'pending' && <span style={{fontSize: '0.8em', marginLeft: '5px'}}>⏳</span>}
+                <div key={msg.id} className={`message-wrapper ${isSent ? "sent" : "received"}`}>
+                  {!isSent && (
+                    <div className="user-avatar" style={{ background: "linear-gradient(135deg, #FF6B6B, #8B3DFF)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", width: "32px", height: "32px", flexShrink: 0, marginTop: "auto" }}>
+                      {chat.otherUser.name?.[0]?.toUpperCase()}
                     </div>
-                    <div className="message-time">
+                  )}
+                  <div className="message-bubble">
+                    {msg.content.startsWith("[MEDIA]:") ? (
+                      <MediaMessage content={msg.content} />
+                    ) : (
+                      msg.content
+                    )}
+                    {msg.syncStatus === 'pending' && <span style={{fontSize: '0.8em', marginLeft: '5px'}}>⏳</span>}
+                    <div className="message-time-inline">
                       {new Date(msg.created_at || "").toLocaleTimeString("en-IN", {
                         hour: "2-digit",
                         minute: "2-digit",
                         timeZone: "Asia/Kolkata"
                       })}
+                      {isSent && (
+                        <svg style={{ marginLeft: "4px", verticalAlign: "bottom" }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                      )}
                     </div>
                   </div>
                   {/* Only show edit/delete buttons for messages sent by current user */}
@@ -513,17 +597,43 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
         </>
       )}
 
-      <div className="chat-input-area">
-        <input
-          type="text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Type a message..."
-        />
-        <button onClick={handleSend}>Send</button>
+      <div className="chat-input-wrapper">
+        <div className="chat-input-container">
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: "none" }}
+            onChange={handleFileSelect}
+            accept="image/*,video/*,audio/*"
+          />
+          <button 
+            className="add-btn" 
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? "⏳" : <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>}
+          </button>
+          
+          <input
+            type="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Type a message..."
+            disabled={uploading}
+          />
+          
+          <div style={{ display: "flex", gap: "8px", color: "var(--text-tertiary)" }}>
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+          </div>
+
+          <button className="send-btn" onClick={() => handleSend()} disabled={uploading}>
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ transform: "rotate(45deg)", marginLeft: "-2px" }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
