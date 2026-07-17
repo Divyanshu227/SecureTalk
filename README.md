@@ -1,22 +1,29 @@
-# 💬 Full-Stack Chat Application
+# 💬 Full-Stack Secure Chat Application
 
-A modern, feature-rich chat application built with React, TypeScript, Node.js, and PostgreSQL. Send messages, edit, delete, and manage conversations in a beautiful, responsive interface.
+A modern, feature-rich, local-first chat application built with React, TypeScript, Node.js, and PostgreSQL. Features End-to-End Encryption (E2EE), offline message queuing, and seamless cross-device synchronization.
 
 ## 🌟 Key Features
+
+### 🔒 End-to-End Encryption (E2EE)
+- **RSA-OAEP Encryption**: All messages are encrypted locally before leaving your device. Only the intended recipient can decrypt them.
+- **Cross-Device Key Sync**: Your private encryption keys are securely backed up to the server using AES-GCM (encrypted with a PBKDF2 derivative of your password), ensuring seamless access across all your devices without compromising security.
+
+### 📶 Offline-First & Resilient Sync
+- **Local Database (IndexedDB)**: Powered by Dexie.js, all your chats and messages are stored locally. You can instantly view your history without waiting for network requests.
+- **Offline Message Queuing**: Send messages even when you're completely offline. They are placed in an encrypted outbox and automatically synced to the server as soon as your connection is restored.
+- **Self-Healing Sync**: Progressive cross-device synchronization prevents data loss and automatically resolves key mismatches.
 
 ### 📱 User Authentication
 - Register new accounts with secure password hashing (bcrypt)
 - Login with email and password
+- Password visibility toggle on login/register screens
 - JWT token-based authentication
 - Protected routes and API endpoints
-- Auto-logout functionality
 
 ### 💬 Chat Functionality
 - Create new conversations with other users
 - View all active chats in a sidebar
-- Send real-time messages
-- View conversation history
-- Chat persistence across sessions
+- Send real-time messages via WebSockets (Socket.io)
 - Automatic duplicate chat prevention
 
 ### ✏️ Message Management
@@ -25,15 +32,12 @@ A modern, feature-rich chat application built with React, TypeScript, Node.js, a
 - **Delete**: Remove messages permanently
 - **View**: See all messages with timestamps
 - **Edited Indicator**: Visual feedback when messages are modified
-- **Message Ownership**: Only your messages can be edited/deleted
 
 ### 🎨 Beautiful UI/UX
 - Modern gradient design (Purple theme)
 - Smooth animations and transitions
 - Responsive layout (Desktop, Tablet, Mobile)
 - Dark mode ready CSS
-- Modal dialogs for user interactions
-- Intuitive user interface
 - Real-time visual feedback
 
 ## 🛠️ Tech Stack
@@ -42,8 +46,11 @@ A modern, feature-rich chat application built with React, TypeScript, Node.js, a
 ```
 - React 18 (TypeScript)
 - Vite (Fast bundling)
+- Dexie.js (IndexedDB / Local-first persistence)
+- WebCrypto API (RSA-OAEP, AES-GCM, PBKDF2)
 - React Router (Navigation)
 - Axios (HTTP Client)
+- Socket.io-client (Real-time events)
 - CSS3 (Custom styling)
 ```
 
@@ -51,6 +58,7 @@ A modern, feature-rich chat application built with React, TypeScript, Node.js, a
 ```
 - Node.js + Express.js
 - PostgreSQL (Database)
+- Socket.io (Real-time WebSocket server)
 - JWT (Authentication)
 - Bcrypt (Password hashing)
 - CORS (Cross-origin support)
@@ -80,107 +88,16 @@ Chatapp/
 │   │   ├── api/
 │   │   ├── auth/
 │   │   ├── components/
+│   │   ├── db/                 # Dexie.js Database
 │   │   ├── pages/
-│   │   └── types/
+│   │   ├── types/
+│   │   └── utils/              # Cryptography utils
 │   └── package.json
 │
-├── PROJECT_SUMMARY.md          # Comprehensive feature guide
-├── QUICKSTART.md               # Setup and installation
-├── FEATURES_GUIDE.md           # UI/UX and user guide
-└── README.md                   # This file
-```
-
-## 🚀 Quick Start
-# 💬 Full-Stack Chat Application
-
-A modern, feature-rich chat application built with React, TypeScript, Node.js, and PostgreSQL. Send messages, edit, delete, and manage conversations in a beautiful, responsive interface.
-
-## 🌟 Key Features
-
-### 📱 User Authentication
-- Register new accounts with secure password hashing (bcrypt)
-- Login with email and password
-- JWT token-based authentication
-- Protected routes and API endpoints
-- Auto-logout functionality
-
-### 💬 Chat Functionality
-- Create new conversations with other users
-- View all active chats in a sidebar
-- Send real-time messages
-- View conversation history
-- Chat persistence across sessions
-- Automatic duplicate chat prevention
-
-### ✏️ Message Management
-- **Send**: Send messages with Enter key support
-- **Edit**: Update sent messages anytime
-- **Delete**: Remove messages permanently
-- **View**: See all messages with timestamps
-- **Edited Indicator**: Visual feedback when messages are modified
-- **Message Ownership**: Only your messages can be edited/deleted
-
-### 🎨 Beautiful UI/UX
-- Modern gradient design (Purple theme)
-- Smooth animations and transitions
-- Responsive layout (Desktop, Tablet, Mobile)
-- Dark mode ready CSS
-- Modal dialogs for user interactions
-- Intuitive user interface
-- Real-time visual feedback
-
-## 🛠️ Tech Stack
-
-### Frontend
-```
-- React 18 (TypeScript)
-- Vite (Fast bundling)
-- React Router (Navigation)
-- Axios (HTTP Client)
-- CSS3 (Custom styling)
-```
-
-### Backend
-```
-- Node.js + Express.js
-- PostgreSQL (Database)
-- JWT (Authentication)
-- Bcrypt (Password hashing)
-- CORS (Cross-origin support)
-- Nodemon (Development)
-```
-
-## 📁 Project Structure
-
-```
-Chatapp/
-├── Backend/                    # Node.js/Express server
-│   ├── src/
-│   │   ├── app.js
-│   │   ├── server.js
-│   │   ├── config/db.js
-│   │   ├── controllers/
-│   │   ├── middleware/
-│   │   ├── routes/
-│   │   └── utils/
-│   └── package.json
-│
-├── chat-frontend/              # React application
-│   ├── src/
-│   │   ├── App.tsx
-│   │   ├── main.tsx
-│   │   ├── index.css
-│   │   ├── api/
-│   │   ├── auth/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   └── types/
-│   └── package.json
-│
-├── PROJECT_SUMMARY.md          # Comprehensive feature guide
-├── QUICKSTART.md               # Setup and installation
-├── FEATURES_GUIDE.md           # UI/UX and user guide
-└── README.md                   # This file
+├── PROJECT_SUMMARY.md          
+├── QUICKSTART.md               
+├── FEATURES_GUIDE.md           
+└── README.md                   
 ```
 
 ## 🚀 Quick Start
@@ -199,6 +116,8 @@ CREATE TABLE users (
   name VARCHAR(100),
   email VARCHAR(100) UNIQUE NOT NULL,
   password VARCHAR(100) NOT NULL,
+  public_key TEXT,
+  encrypted_private_key TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -216,6 +135,7 @@ CREATE TABLE messages (
   senderid INTEGER REFERENCES users(id),
   receiverid INTEGER REFERENCES users(id),
   content TEXT NOT NULL,
+  sender_content TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
@@ -246,30 +166,16 @@ Frontend runs on: `http://localhost:5173`
 1. Register a new account
 2. Register another account (or use in another browser)
 3. Click "+ New Chat" to start a conversation
-4. Send, edit, and delete messages
-5. Enjoy!
-
-## CI/CD
-
-This project includes a GitHub Actions workflow at `.github/workflows/ci-cd.yml`.
-
-The pipeline runs on pull requests and pushes to `main` or `master`:
-- Backend: `npm ci`, JavaScript syntax checks, and a high-severity production dependency audit
-- Frontend: `npm ci`, `npm run lint`, and `npm run build`
-
-Deployment runs only after CI passes on `main` or `master`. Add these repository secrets if you want GitHub Actions to trigger your hosting provider deploy hooks:
-- `BACKEND_DEPLOY_HOOK`
-- `FRONTEND_DEPLOY_HOOK`
-
-If either secret is missing, that deploy step is skipped without failing the workflow.
+4. Send, edit, and delete messages (everything is End-to-End Encrypted!)
 
 ## 📚 API Documentation
 
 ### Authentication Endpoints
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/auth/register` | Create new account |
-| POST | `/auth/login` | Login user |
+| POST | `/auth/register` | Create new account & sync keys |
+| POST | `/auth/login` | Login user & retrieve keys |
+| POST | `/auth/keys` | Backup/Update encrypted keys |
 | GET | `/auth/me` | Get current user |
 | GET | `/auth/users` | Get all users |
 
@@ -278,226 +184,48 @@ If either secret is missing, that deploy step is skipped without failing the wor
 |--------|----------|-------------|
 | GET | `/chats` | Get user's chats |
 | POST | `/chats` | Create new chat |
-| POST | `/chats/:chatId/messages` | Send message |
+| POST | `/chats/:chatId/messages` | Send E2EE message |
 | GET | `/chats/:chatId/messages` | Get messages |
 | PUT | `/chats/:chatId/messages/:messageId` | Edit message |
 | DELETE | `/chats/:chatId/messages/:messageId` | Delete message |
 
 ## 🔒 Security
 
+- ✅ **True End-to-End Encryption**: Messages never exist in plaintext on the server.
 - ✅ Passwords hashed with bcrypt (10 salt rounds)
 - ✅ JWT token authentication with 1-day expiration
 - ✅ Protected routes requiring authentication
 - ✅ Authorization checks on sensitive operations
 - ✅ Parameterized SQL queries (SQL injection protection)
 - ✅ CORS enabled for frontend-backend communication
-- ✅ XSS protection through React's built-in escaping
-
-## 🎯 Features by Component
-
-### Authentication Context (`AuthContext.tsx`)
-- Global auth state management
-- Token persistence in localStorage
-- Login/logout functionality
-- User information storage
-
-### Protected Route (`ProtectedRoute.tsx`)
-- Route-level access control
-- Redirect to login if not authenticated
-- Token validation before page load
-
-### Login Page (`Login.tsx`)
-- Email/password form
-- Error handling
-- Link to register
-- Automatic redirect on successful login
-
-### Register Page (`Register.tsx`)
-- Name/email/password form
-- Validation and error display
-- Success notification
-- Automatic redirect to login
-
-### Chat Page (`Chat.tsx`)
-- Main chat interface
-- Chat list sidebar
-- New chat modal
-- User selection
-- Logout button
-- Message window integration
-
-### ChatList Component (`ChatList.tsx`)
-- Displays all active chats
-- Shows last message preview
-- Active chat highlighting
-- Click to select chat
-- Responsive layout
-
-### ChatWindow Component (`ChatWindow.tsx`)
-- Message display area
-- Message input field
-- Send functionality
-- Edit/delete message actions
-- Modal for editing
-- Timestamps on messages
-- Edited indicator
-- Empty state handling
-
-## 💻 Development
-
-### Frontend Build
-```bash
-cd chat-frontend
-npm run build      # Production build
-npm run preview    # Preview production build
-npm run lint       # Lint code
-```
-
-### Backend Development
-```bash
-cd Backend
-npm run dev        # Start with nodemon
-npm start          # Start production
-```
-
-## 🐛 Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| Port already in use | Change PORT in .env or kill process |
-| Database connection error | Verify PostgreSQL running, check DATABASE_URL |
-| CORS errors | Ensure backend URL in axios.ts is correct |
-| Login fails | Check credentials, verify backend running |
-| Messages not loading | Refresh page, check browser console |
 
 ## 📈 Performance
 
-- **Initial Load**: ~2-3 seconds
-- **Message Operations**: <500ms
+- **Initial Load**: ~2-3 seconds (Instant for returning users due to IndexedDB)
+- **Message Operations**: <500ms (Optimistic UI updates instantly)
 - **Chat Switching**: Instant
 - **Database Queries**: Optimized with indexes
 - **Bundle Size**: ~150KB (gzipped)
 
 ## 🔮 Future Enhancements
 
-- [ ] Real-time updates with Socket.io
+- [x] Real-time updates with Socket.io
+- [x] E2EE Cross-device Synchronization
+- [x] Offline outbox support
 - [ ] Group chats
 - [ ] File/image sharing
 - [ ] Typing indicators
 - [ ] Read receipts
 - [ ] Message search
-- [ ] User profiles
-- [ ] User blocking
-- [ ] Message reactions
-- [ ] Voice messages
-- [ ] Video calls
-- [ ] Message pinning
-- [ ] User online status
-- [ ] Push notifications
-
-## 📝 Code Quality
-
-- TypeScript for type safety
-- ESLint for code consistency
-- Modular component architecture
-- Separation of concerns
-- DRY principles followed
-- Error handling implemented
-- Loading states managed
-- Responsive design patterns
-
-## 🚀 Deployment
-
-This is a **monorepo** with separate Backend and Frontend. Deploy them independently:
-
-### Backend Deployment (Railway, Heroku, etc.)
-
-1. Deploy the `Backend/` directory as a Node.js application
-2. Set environment variables:
-   - `DATABASE_URL`: PostgreSQL connection string (or use `PG_HOST`, `PG_PORT`, `PG_USER`, `PG_PASSWORD`, `PG_DATABASE`)
-   - `JWT_SECRET`: Secret key for JWT signing
-   - `PORT`: (optional, defaults to 5000)
-
-3. Uses `Procfile` and `start.sh` for automatic platform recognition
-
-### Frontend Deployment (Vercel, Netlify, etc.)
-
-1. Deploy the `chat-frontend/` directory as a Vite app
-2. Set environment variables:
-   - `VITE_API_BASE_URL`: Backend API URL (e.g., `https://your-backend.railway.app`)
-
-3. Build command: `npm run build`
-4. Start command: `npm run dev` or serve `dist/`
-
-### Local Development
-
-**Backend:**
-```bash
-cd Backend
-npm install
-npm run dev
-```
-
-**Frontend:**
-```bash
-cd chat-frontend
-npm install
-npm run dev
-```
-
-## 🤝 Contributing
-
-This is a complete implementation. To extend:
-
-1. Create a new branch for features
-2. Follow existing code patterns
-3. Test thoroughly
-4. Update documentation
-5. Submit pull request
 
 ## 📄 License
 
 This project is open source and available for educational and commercial use.
 
-## 📞 Support
-
-For issues or questions:
-1. Check the troubleshooting section
-2. Review PROJECT_SUMMARY.md
-3. Check QUICKSTART.md
-4. Review browser console for errors
-5. Verify all services are running
-
-## 🎓 Learning Resources
-
-- **React**: https://react.dev
-- **TypeScript**: https://www.typescriptlang.org
-- **Express**: https://expressjs.com
-- **PostgreSQL**: https://www.postgresql.org
-- **JWT**: https://jwt.io
-
-## ✨ Highlights
-
-This application demonstrates:
-- Full-stack development
-- Authentication & authorization
-- CRUD operations
-- Database design
-- API development
-- Modern UI/UX
-- Responsive design
-- Error handling
-- State management
-- Component composition
-
-## 🎉 Thank You!
-
-Thank you for using this chat application. We hope you enjoy the experience and feel free to extend it with your own features!
-
 ---
 
-**Version**: 1.0.0  
-**Last Updated**: February 2026  
+**Version**: 1.1.0  
+**Last Updated**: July 2026  
 **Status**: Production Ready ✅
 
 Start chatting now! 💬
