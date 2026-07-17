@@ -73,8 +73,8 @@ export const getMessages = async (req, res) => {
       // [chatId, currentUserId]
     `SELECT m.messageid as id,
             m.chatid as chat_id,
-            m.senderid as senderId,
-            CASE WHEN m.senderid = $2 THEN true ELSE false END as isSent,
+            m.senderid as "senderId",
+            CASE WHEN m.senderid = $2 THEN true ELSE false END as "isSent",
             m.content,
             m.created_at
       FROM messages m
