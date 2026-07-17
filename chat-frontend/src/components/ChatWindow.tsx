@@ -8,7 +8,7 @@ import {
 } from "../api/message";
 import { useAuth } from "../auth/AuthContext";
 import { useSocket } from "../contexts/SocketContext";
-import { getLocalMessages, saveMessagesLocally, saveSingleMessageLocally, deleteMessageLocally, type LocalMessage, getMyPrivateKey } from "../db/localDb";
+import { getLocalMessages, saveMessagesLocally, saveSingleMessageLocally, deleteMessageLocally, type LocalMessage, getMyPrivateKey, addToOutbox, getOutboxForChat, removeFromOutbox } from "../db/localDb";
 import { encryptMessage, decryptMessage } from "../utils/crypto";
 
 interface Props {
@@ -27,6 +27,47 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
 
   const { user } = useAuth();
   const { socket, isConnected } = useSocket();
+
+  // Drain outbox when connectivity is restored
+  useEffect(() => {
+    if (!isConnected || !chat) return;
+
+    const syncOutbox = async () => {
+      const pending = await getOutboxForChat(chat.id);
+      if (pending.length === 0) return;
+      console.log(`🔄 Syncing ${pending.length} pending message(s)...`);
+
+      for (const entry of pending) {
+        try {
+          const newMsg = await sendMessage(chat.id, entry.encryptedContent, entry.senderContent);
+          const localSyncedMsg = { ...newMsg, content: entry.plaintext };
+          await saveSingleMessageLocally(chat.id, localSyncedMsg, 'synced');
+          await deleteMessageLocally(entry.id);
+          await removeFromOutbox(entry.id);
+
+          setMessages(prev => {
+            const filtered = prev.filter(m => m.id !== entry.id);
+            const realMsg: LocalMessage = { ...localSyncedMsg, chatId: chat.id, syncStatus: 'synced', issent: true };
+            if (filtered.some(m => m.id === newMsg.id)) return filtered;
+            return [...filtered, realMsg];
+          });
+
+          if (socket && isConnected) {
+            socket.emit("message_persisted", {
+              chatId: chat.id,
+              messageData: { id: newMsg.id, senderId: newMsg.senderId, receiverId: chat.otherUser.id, content: newMsg.content, created_at: newMsg.created_at },
+            });
+          }
+          console.log(`✅ Synced outbox message ${entry.id}`);
+        } catch (err) {
+          console.error(`❌ Failed to sync outbox message ${entry.id}:`, err);
+        }
+      }
+      onMessageSent?.();
+    };
+
+    syncOutbox();
+  }, [isConnected, chat?.id]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -226,56 +267,59 @@ const ChatWindow = ({ chat, onMessageSent }: Props) => {
       }
 
       // Send via API to persist the message (sends encrypted text + self-encrypted copy)
-      const newMsg = await sendMessage(chat.id, finalContentToSend, senderContentToSend);
-      console.log("✅ Message sent and saved:", newMsg);
+      try {
+        const newMsg = await sendMessage(chat.id, finalContentToSend, senderContentToSend);
+        console.log("✅ Message sent and saved:", newMsg);
 
-      // Save real message locally using our PLAINTEXT
-      const localSyncedMsg = { ...newMsg, content: messageText };
-      await saveSingleMessageLocally(chat.id, localSyncedMsg, 'synced');
-      
-      // Remove temp from state and replace with the real message
-      await deleteMessageLocally(tempId);
-      setMessages((prev) => {
-        const filtered = prev.filter(m => m.id !== tempId);
-        const realMsg: LocalMessage = {
-          ...localSyncedMsg,
-          chatId: chat.id,
-          syncStatus: 'synced',
-          issent: true,
-        };
-        // Avoid duplicate if socket already added it
-        if (filtered.some(m => m.id === newMsg.id)) return filtered;
-        return [...filtered, realMsg];
-      });
-
-      onMessageSent?.();
-      scrollToBottom();
-
-      // Broadcast to other users via socket for real-time delivery
-      if (socket && isConnected) {
-        console.log("📤 [ChatWindow] ABOUT TO emit message_persisted");
-        console.log("   Socket ID:", socket.id);
-        console.log("   Chat ID:", chat.id);
-        console.log("   Message ID:", newMsg.id);
-
-        socket.emit("message_persisted", {
-          chatId: chat.id,
-          messageData: {
-            id: newMsg.id,
-            senderId: newMsg.senderId,
-            receiverId: chat.otherUser.id,
-            content: newMsg.content,
-            created_at: newMsg.created_at,
-          },
+        // Save real message locally using our PLAINTEXT
+        const localSyncedMsg = { ...newMsg, content: messageText };
+        await saveSingleMessageLocally(chat.id, localSyncedMsg, 'synced');
+        
+        // Remove temp from state and replace with the real message
+        await deleteMessageLocally(tempId);
+        setMessages((prev) => {
+          const filtered = prev.filter(m => m.id !== tempId);
+          const realMsg: LocalMessage = {
+            ...localSyncedMsg,
+            chatId: chat.id,
+            syncStatus: 'synced',
+            issent: true,
+          };
+          if (filtered.some(m => m.id === newMsg.id)) return filtered;
+          return [...filtered, realMsg];
         });
 
-        console.log("✅ [ChatWindow] message_persisted event emitted");
-      } else {
-        console.warn("⚠️ Socket not ready:", { socket: !!socket, isConnected });
+        onMessageSent?.();
+        scrollToBottom();
+
+        // Broadcast to other users via socket for real-time delivery
+        if (socket && isConnected) {
+          socket.emit("message_persisted", {
+            chatId: chat.id,
+            messageData: {
+              id: newMsg.id,
+              senderId: newMsg.senderId,
+              receiverId: chat.otherUser.id,
+              content: newMsg.content,
+              created_at: newMsg.created_at,
+            },
+          });
+        }
+      } catch (sendError) {
+        // Network failure — save to outbox for retry when back online
+        console.warn("⚠️ Send failed, saving to outbox for retry:", sendError);
+        await addToOutbox({
+          id: tempId,
+          chatId: chat.id,
+          encryptedContent: finalContentToSend,
+          senderContent: senderContentToSend,
+          plaintext: messageText,
+          created_at: new Date().toISOString(),
+        });
+        // Keep the pending message visible in UI with ⏳ indicator
       }
     } catch (error) {
-      console.error("Failed to send message", error);
-      setText(messageText);
+      console.error("Failed to prepare message", error);
     }
   };
 

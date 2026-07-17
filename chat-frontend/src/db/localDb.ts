@@ -13,10 +13,22 @@ export interface KeyStore {
   privateKey: CryptoKey;
 }
 
+// Outbox stores the encrypted ciphertexts for pending messages so they can be
+// retried exactly as-is when connectivity is restored (we can't re-encrypt at retry time).
+export interface OutboxEntry {
+  id: number;           // Matches the tempId of the pending LocalMessage
+  chatId: number;
+  encryptedContent: string;   // Ciphertext for recipient
+  senderContent?: string;     // Ciphertext for self
+  plaintext: string;          // Plaintext to store locally after successful send
+  created_at: string;
+}
+
 export class ChatDatabase extends Dexie {
   chats!: Table<Chat, number>;
   messages!: Table<LocalMessage, number>;
   keys!: Table<KeyStore, string>;
+  outbox!: Table<OutboxEntry, number>;
 
   constructor() {
     super('ChatDatabase');
@@ -24,6 +36,12 @@ export class ChatDatabase extends Dexie {
       chats: 'id, lastMessageTime',
       messages: 'id, chatId, created_at, syncStatus',
       keys: 'id'
+    });
+    this.version(3).stores({
+      chats: 'id, lastMessageTime',
+      messages: 'id, chatId, created_at, syncStatus',
+      keys: 'id',
+      outbox: 'id, chatId'
     });
   }
 }
@@ -67,6 +85,19 @@ export const saveSingleMessageLocally = async (chatId: number, message: Message,
 
 export const deleteMessageLocally = async (messageId: number) => {
   await localDb.messages.delete(messageId);
+};
+
+// Outbox helpers for offline message queue
+export const addToOutbox = async (entry: OutboxEntry) => {
+  await localDb.outbox.put(entry);
+};
+
+export const getOutboxForChat = async (chatId: number): Promise<OutboxEntry[]> => {
+  return await localDb.outbox.where('chatId').equals(chatId).toArray();
+};
+
+export const removeFromOutbox = async (id: number) => {
+  await localDb.outbox.delete(id);
 };
 
 export const clearLocalDb = async () => {
