@@ -8,15 +8,22 @@ export interface LocalMessage extends Message {
   syncStatus?: 'synced' | 'pending' | 'failed'; // For offline sync support
 }
 
+export interface KeyStore {
+  id: string; // "myPrivateKey"
+  privateKey: CryptoKey;
+}
+
 export class ChatDatabase extends Dexie {
   chats!: Table<Chat, number>;
   messages!: Table<LocalMessage, number>;
+  keys!: Table<KeyStore, string>;
 
   constructor() {
     super('ChatDatabase');
-    this.version(1).stores({
+    this.version(2).stores({
       chats: 'id, lastMessageTime',
-      messages: 'id, chatId, created_at, syncStatus'
+      messages: 'id, chatId, created_at, syncStatus',
+      keys: 'id'
     });
   }
 }
@@ -61,4 +68,14 @@ export const saveSingleMessageLocally = async (chatId: number, message: Message,
 export const clearLocalDb = async () => {
   await localDb.chats.clear();
   await localDb.messages.clear();
+  // We generally DO NOT clear keys on logout to preserve access if they log back in
+};
+
+export const getMyPrivateKey = async (): Promise<CryptoKey | undefined> => {
+  const keyEntry = await localDb.keys.get("myPrivateKey");
+  return keyEntry?.privateKey;
+};
+
+export const saveMyPrivateKey = async (privateKey: CryptoKey) => {
+  await localDb.keys.put({ id: "myPrivateKey", privateKey });
 };
