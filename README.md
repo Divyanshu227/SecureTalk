@@ -122,34 +122,68 @@ Chatapp/
 ### 1. Database Setup
 
 ```sql
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- Users Table
-CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(100),
-  email VARCHAR(100) UNIQUE NOT NULL,
-  password VARCHAR(100) NOT NULL,
-  public_key TEXT,
-  encrypted_private_key TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE "users" (
+	"id" serial PRIMARY KEY,
+	"name" varchar(100),
+	"email" varchar(100),
+	"password" varchar(100),
+	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+	"public_key" text,
+	"encrypted_private_key" text,
+	"username" varchar(100) CONSTRAINT "users_username_key" UNIQUE,
+	"require_connection" boolean DEFAULT true,
+	"last_seen" timestamp
 );
 
 -- Chat Table
-CREATE TABLE chat (
-  chatid SERIAL PRIMARY KEY,
-  userid1 INTEGER REFERENCES users(id),
-  userid2 INTEGER REFERENCES users(id)
+CREATE TABLE "chat" (
+	"chatid" serial PRIMARY KEY,
+	"userid1" integer REFERENCES "users"("id"),
+	"userid2" integer REFERENCES "users"("id")
 );
 
 -- Messages Table
-CREATE TABLE messages (
-  messageid SERIAL PRIMARY KEY,
-  chatid INTEGER REFERENCES chat(chatid),
-  senderid INTEGER REFERENCES users(id),
-  receiverid INTEGER REFERENCES users(id),
-  content TEXT NOT NULL,
-  sender_content TEXT,
-  status VARCHAR(20) DEFAULT 'sent',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE "messages" (
+	"messageid" serial PRIMARY KEY,
+	"chatid" integer REFERENCES "chat"("chatid"),
+	"senderid" integer REFERENCES "users"("id"),
+	"receiverid" integer REFERENCES "users"("id"),
+	"content" text,
+	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+	"sender_content" text,
+	"status" varchar(20) DEFAULT 'sent'
+);
+
+-- Connections Table
+CREATE TABLE "connections" (
+	"user1" integer REFERENCES "users"("id") ON DELETE CASCADE,
+	"user2" integer REFERENCES "users"("id") ON DELETE CASCADE,
+	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+	CONSTRAINT "connections_pkey" PRIMARY KEY("user1","user2")
+);
+
+-- Connection Requests Table
+CREATE TABLE "connection_requests" (
+	"id" serial PRIMARY KEY,
+	"sender_id" integer REFERENCES "users"("id") ON DELETE CASCADE,
+	"receiver_id" integer REFERENCES "users"("id") ON DELETE CASCADE,
+	"status" varchar(20) DEFAULT 'pending',
+	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+	CONSTRAINT "connection_requests_sender_id_receiver_id_key" UNIQUE("sender_id","receiver_id")
+);
+
+-- Push Subscriptions Table
+CREATE TABLE "push_subscriptions" (
+	"id" serial PRIMARY KEY,
+	"user_id" integer REFERENCES "users"("id") ON DELETE CASCADE,
+	"endpoint" text NOT NULL,
+	"auth" text NOT NULL,
+	"p256dh" text NOT NULL,
+	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+	CONSTRAINT "push_subscriptions_user_id_endpoint_key" UNIQUE("user_id","endpoint")
 );
 ```
 
