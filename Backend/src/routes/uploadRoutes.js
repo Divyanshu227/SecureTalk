@@ -1,27 +1,30 @@
 import express from "express";
 import multer from "multer";
-import path from "path";
 import crypto from "crypto";
-import fs from "fs";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Ensure uploads directory exists
-const uploadDir = path.join(process.cwd(), "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-// Configure multer storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    // Generate a random filename with .enc extension
+// Configure Cloudinary Storage
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => {
     const randomName = crypto.randomBytes(16).toString("hex");
-    cb(null, `${randomName}.enc`);
+    return {
+      folder: "securetalk_uploads",
+      format: "enc",
+      public_id: randomName,
+      resource_type: "raw" // Must be raw for encrypted blobs
+    };
   },
 });
 
@@ -37,7 +40,7 @@ router.post("/", authMiddleware, upload.single("file"), (req, res) => {
   }
 
   res.json({
-    url: `/uploads/${req.file.filename}`
+    url: req.file.path // Cloudinary returns the full absolute URL in req.file.path
   });
 });
 

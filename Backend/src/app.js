@@ -5,6 +5,7 @@ import chatRoutes from "./routes/chatroutes.js";
 import connectionRoutes from "./routes/connectionRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import path from "path";
+import { v2 as cloudinary } from "cloudinary";
 
 const app = express();
 app.use(express.json());
@@ -15,7 +16,11 @@ app.use("/auth", authRoutes);
 app.use("/chats", chatRoutes);
 app.use("/connections", connectionRoutes);
 app.use("/upload", uploadRoutes);
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+// Legacy uploads redirect to Cloudinary
+app.get("/uploads/:filename", (req, res) => {
+  const cloudinaryUrl = cloudinary.url(`securetalk_uploads/${req.params.filename}`, { resource_type: "raw" });
+  res.redirect(cloudinaryUrl);
+});
 
 export default app;
 
