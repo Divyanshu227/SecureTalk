@@ -582,20 +582,20 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
           </button>
           <div style={{ position: "relative" }}>
-            <div className="user-avatar" style={{ background: "linear-gradient(135deg, #FF6B6B, #8B3DFF)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", width: "40px", height: "40px", fontSize: "1.2rem" }}>
+            <div className="user-avatar" style={{ background: "linear-gradient(135deg, #FF6B6B, #8B5CF6)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", width: "48px", height: "48px", fontSize: "18px", flexShrink: 0 }}>
               {chat.otherUser.name?.[0]?.toUpperCase()}
             </div>
             {isOnline && <div className="online-indicator"></div>}
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-            <div style={{ fontWeight: 600, fontSize: "16px", display: "flex", alignItems: "center", gap: "4px" }}>
-              {chat.otherUser.name}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--accent-blue)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          <div style={{ display: "flex", flexDirection: "column", gap: "2px", overflow: "hidden", flex: 1 }}>
+            <div style={{ fontWeight: 600, fontSize: "18px", display: "flex", alignItems: "center", gap: "4px" }}>
+              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{chat.otherUser.name}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--accent-blue)" style={{ flexShrink: 0 }}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
             </div>
-            <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>{statusText}</div>
-            <div style={{ fontSize: "12px", color: "var(--success-green)", display: "flex", alignItems: "center", gap: "4px" }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>
-              End-to-end encrypted
+            <div style={{ fontSize: "13px", color: "var(--text-secondary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{statusText}</div>
+            <div style={{ fontSize: "13px", color: "var(--success-green)", display: "flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap" }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>
+              <span>End-to-end encrypted</span>
             </div>
           </div>
         </div>
@@ -609,8 +609,8 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
       </div>
 
       <div className="chat-messages" ref={messagesContainerRef}>
-        <div style={{ textAlign: "center", margin: "10px 0" }}>
-          <span style={{ background: "rgba(255, 255, 255, 0.05)", padding: "4px 12px", borderRadius: "10px", fontSize: "0.8rem", color: "var(--text-secondary)" }}>Today</span>
+        <div className="date-separator">
+          <span className="date-separator-text">Today</span>
         </div>
 
         {loading ? (
@@ -777,25 +777,25 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
           >
-            {uploading ? "⏳" : <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>}
+            {uploading ? "⏳" : <svg width="24" height="24" fill="none" stroke="var(--text-secondary)" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>}
           </button>
           
           <input
             type="text"
+            placeholder="Type a message..."
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Type a message..."
             disabled={uploading}
           />
           
-          <div style={{ display: "flex", gap: "12px", color: "var(--text-tertiary)" }}>
-            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+          <div style={{ display: "flex", gap: "8px", color: "var(--text-secondary)", alignItems: "center" }}>
+            <button className="icon-btn" style={{ padding: "4px" }}><svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></button>
+            <button className="icon-btn" style={{ padding: "4px" }}><svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg></button>
           </div>
 
           <button className="send-btn" title="Send Message" onClick={() => handleSend()} disabled={uploading}>
-            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ transform: "rotate(45deg)", marginLeft: "-2px" }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ transform: "rotate(45deg)", marginLeft: "-2px" }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
           </button>
         </div>
       </div>
