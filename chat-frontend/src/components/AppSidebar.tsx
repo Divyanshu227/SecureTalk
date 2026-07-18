@@ -36,22 +36,22 @@ const AppSidebar = ({ onSettingsClick }: { onSettingsClick: () => void }) => {
         </svg>
       </div>
       
-      <div className="nav-item active">
+      <div className="nav-item active" title="Chats">
         <Icons.Chat />
       </div>
-      <div className="nav-item">
+      <div className="nav-item" title="Contacts">
         <Icons.Contacts />
       </div>
-      <div className="nav-item">
+      <div className="nav-item" title="Groups">
         <Icons.Groups />
       </div>
-      <div className="nav-item">
+      <div className="nav-item" title="Calls">
         <Icons.Calls />
       </div>
       
       <div style={{ flex: 1 }}></div>
       
-      <div className="nav-item" onClick={onSettingsClick} style={{ marginBottom: "16px" }}>
+      <div className="nav-item" onClick={onSettingsClick} style={{ marginBottom: "16px" }} title="Settings">
         <Icons.Settings />
       </div>
     </div>

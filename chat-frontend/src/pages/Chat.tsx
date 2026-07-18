@@ -24,6 +24,7 @@ const Chat = () => {
   const [showInboxModal, setShowInboxModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const { logout, user } = useAuth();
   const { socket, isConnected } = useSocket();
   const navigate = useNavigate();
@@ -167,6 +168,11 @@ const Chat = () => {
     navigate("/login");
   };
 
+  const filteredChats = chats.filter(chat => 
+    chat.otherUser.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    chat.otherUser.username.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="app-layout">
       <div className={`app-sidebar ${activeChat ? "hidden-mobile" : ""}`}>
@@ -176,19 +182,23 @@ const Chat = () => {
       <div className={`chat-list-panel ${activeChat ? "hidden-mobile" : ""}`}>
         <div className="chat-list-header">
           <h2>Chats <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg></h2>
-          <button className="icon-btn" onClick={() => setShowSearchModal(true)}>
+          <button className="icon-btn" title="Search Users" onClick={() => setShowSearchModal(true)}>
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
           </button>
         </div>
 
-        <div className="search-box" onClick={() => setShowSearchModal(true)}>
+        <div className="search-box">
           <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: "var(--text-tertiary)" }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <input type="text" placeholder="Search by username..." readOnly />
-          <span className="search-shortcut">⌘ K</span>
+          <input 
+            type="text" 
+            placeholder="Search chats..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
 
         <ChatList
-          chats={chats}
+          chats={filteredChats}
           activeChat={activeChat}
           onSelect={setActiveChat}
         />
