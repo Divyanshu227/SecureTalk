@@ -141,6 +141,7 @@ const Chat = () => {
       
       if (data && data.senderId && user && data.senderId !== user.id) {
         import("../utils/sound").then(module => module.playNotificationSound());
+        socket.emit("mark_delivered", { messageId: data.id, chatId: data.chatId });
       }
     };
 

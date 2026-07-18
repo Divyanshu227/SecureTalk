@@ -99,8 +99,29 @@ export const initChatSocket = (io) => {
       console.error("❌ CLIENT ERROR FROM USER", socket.user?.id, ":", data);
     });
 
-    socket.on("client_error", (data) => {
-      console.error("❌ CLIENT ERROR FROM USER", socket.user?.id, ":", data);
+    socket.on("mark_delivered", async ({ messageId, chatId }) => {
+      try {
+        await pool.query("UPDATE messages SET status = 'delivered' WHERE messageid = $1 AND status = 'sent'", [messageId]);
+        io.to(String(chatId)).emit("message_status_update", { messageId, chatId, status: 'delivered' });
+      } catch (err) {
+        console.error("Mark delivered error:", err);
+      }
+    });
+
+    socket.on("mark_chat_read", async (chatId) => {
+      try {
+        const userId = socket.user.id;
+        const result = await pool.query(
+          "UPDATE messages SET status = 'read' WHERE chatid = $1 AND receiverid = $2 AND status IN ('sent', 'delivered') RETURNING messageid",
+          [chatId, userId]
+        );
+        if (result.rowCount > 0) {
+          const messageIds = result.rows.map(r => r.messageid);
+          io.to(String(chatId)).emit("messages_status_update", { messageIds, chatId, status: 'read' });
+        }
+      } catch (err) {
+        console.error("Mark chat read error:", err);
+      }
     });
 
     socket.on("disconnect", async () => {

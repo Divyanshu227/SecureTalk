@@ -243,37 +243,64 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
           content: finalContent,
           created_at: data.created_at || data.timestamp,
           syncStatus: 'synced',
+          status: data.status || 'delivered',
         };
         
         // Save it locally too
         await saveSingleMessageLocally(chat.id, newMessage);
 
         setMessages((prev) => {
-          // Check if message already exists (don't add duplicates)
-          if (prev.some(msg => msg.id === newMessage.id)) {
-            return prev;
-          }
+          if (prev.some(m => m.id === newMessage.id)) return prev;
           return [...prev, newMessage];
         });
+        scrollToBottom();
 
-        // Scroll to bottom after state update
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        }, 0);
+        // Mark it as read immediately since chat window is open
+        socket.emit("mark_read", { messageId: newMessage.id, chatId: chat.id });
       };
       
       processIncomingMessage();
     };
 
     socket.on("receive_message", handleReceiveMessage);
-    console.log("Socket listener registered for chat", chat.id);
+    
+    socket.on("message_status_update", (data: { messageId?: number, messageIds?: number[], chatId: number, status: string }) => {
+      if (Number(data.chatId) !== Number(chat.id)) return;
+      
+      setMessages(prev => prev.map(msg => {
+        if (data.messageId && msg.id === data.messageId) {
+          return { ...msg, status: data.status as any };
+        }
+        if (data.messageIds && data.messageIds.includes(msg.id)) {
+          return { ...msg, status: data.status as any };
+        }
+        return msg;
+      }));
+    });
+
+    socket.on("messages_status_update", (data: { messageIds: number[], chatId: number, status: string }) => {
+      if (Number(data.chatId) !== Number(chat.id)) return;
+      
+      setMessages(prev => prev.map(msg => {
+        if (data.messageIds.includes(msg.id)) {
+          return { ...msg, status: data.status as any };
+        }
+        return msg;
+      }));
+    });
+
+    // Mark chat as read when opening
+    socket.emit("mark_chat_read", chat.id);
 
     return () => {
       socket.off("receive_message", handleReceiveMessage);
-      console.log("Socket listener removed for chat", chat.id);
-      socket.emit("leave_chat", String(chat.id));
+      socket.off("message_status_update");
+      socket.off("messages_status_update");
+      if (isConnected) {
+        socket.emit("leave_chat", String(chat.id));
+      }
     };
-  }, [socket, chat?.id, isConnected]);
+  }, [chat, socket, user, scrollToBottom, isConnected]);
 
   const handleSend = async (overrideText?: string) => {
     const textToSend = overrideText || text;
@@ -300,7 +327,8 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
         content: messageText,
         created_at: new Date().toISOString(),
         issent: true,
-        syncStatus: 'pending'
+        syncStatus: 'pending',
+        status: 'sending'
       };
       
       await saveSingleMessageLocally(chat.id, pendingMsg, 'pending');
@@ -329,7 +357,7 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
         console.log("✅ Message sent and saved:", newMsg);
 
         // Save real message locally using our PLAINTEXT
-        const localSyncedMsg = { ...newMsg, content: messageText };
+        const localSyncedMsg = { ...newMsg, content: messageText, status: newMsg.status || 'sent' };
         await saveSingleMessageLocally(chat.id, localSyncedMsg, 'synced');
         
         // Remove temp from state and replace with the real message
@@ -341,6 +369,7 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
             chatId: chat.id,
             syncStatus: 'synced',
             issent: true,
+            status: localSyncedMsg.status as any
           };
           if (filtered.some(m => m.id === newMsg.id)) return filtered;
           return [...filtered, realMsg];
@@ -620,7 +649,6 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
                     ) : (
                       displayContent
                     )}
-                    {msg.syncStatus === 'pending' && <span style={{fontSize: '0.8em', marginLeft: '5px'}}>⏳</span>}
                     <div className="message-time-inline">
                       {new Date(msg.created_at || "").toLocaleTimeString("en-IN", {
                         hour: "2-digit",
@@ -628,7 +656,17 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
                         timeZone: "Asia/Kolkata"
                       })}
                       {isSent && (
-                        <svg style={{ marginLeft: "4px", verticalAlign: "bottom" }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span style={{ marginLeft: "4px", verticalAlign: "bottom", display: "inline-block" }}>
+                          {msg.status === 'sending' || msg.syncStatus === 'pending' ? (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                          ) : msg.status === 'read' ? (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4dabf7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: "translateY(1px)" }}><path d="M18 6L7 17l-5-5"></path><path d="M22 10l-7.5 7.5L13 16"></path></svg>
+                          ) : msg.status === 'delivered' ? (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: "translateY(1px)" }}><path d="M18 6L7 17l-5-5"></path><path d="M22 10l-7.5 7.5L13 16"></path></svg>
+                          ) : (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                          )}
+                        </span>
                       )}
                     </div>
                   </div>

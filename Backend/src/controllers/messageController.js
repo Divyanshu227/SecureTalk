@@ -24,7 +24,7 @@ export const sendMessage = async (req, res) => {
     const receiverId = req.user.id === userid1 ? userid2 : userid1;
 
     const insertRes = await pool.query(
-      "INSERT INTO messages (chatid, senderid, receiverid, content, sender_content) VALUES ($1,$2,$3,$4,$5) RETURNING messageid, chatid as chat_id, senderid as senderId, content, sender_content, created_at",
+      "INSERT INTO messages (chatid, senderid, receiverid, content, sender_content, status) VALUES ($1,$2,$3,$4,$5,'sent') RETURNING messageid, chatid as chat_id, senderid as senderId, content, sender_content, created_at, status",
       [chatId, req.user.id, receiverId, content, senderContent || null]
     );
 
@@ -39,6 +39,7 @@ export const sendMessage = async (req, res) => {
       content: inserted.content,
       senderContent: inserted.sender_content,
       created_at: inserted.created_at,
+      status: inserted.status,
       isSent: true,
     });
   } catch (error) {
@@ -77,7 +78,8 @@ export const getMessages = async (req, res) => {
             CASE WHEN m.senderid = $2 THEN true ELSE false END as "isSent",
             m.content,
             m.sender_content as "senderContent",
-            m.created_at
+            m.created_at,
+            m.status
       FROM messages m
       WHERE m.chatid = $1
       ORDER BY m.created_at ASC, m.messageid ASC`,
