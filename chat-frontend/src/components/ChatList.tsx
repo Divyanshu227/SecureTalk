@@ -31,7 +31,7 @@ const ChatList = ({ chats, activeChat, onSelect, globalUsers = [], isSearchingGl
           No local chats match
         </div>
       ) : (
-        chats.map((chat, index) => (
+        chats.map((chat) => (
           <div
             key={chat.id}
             className={`chat-list-item ${activeChat?.id === chat.id ? "active" : ""}`}

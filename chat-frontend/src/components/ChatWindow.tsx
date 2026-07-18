@@ -221,6 +221,7 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
       timestamp?: string;
       created_at?: string;
       id?: number;
+      status?: string;
     }) => {
       console.log("Received message event:", data);
 
@@ -254,7 +255,7 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
           content: finalContent,
           created_at: data.created_at || data.timestamp,
           syncStatus: 'synced',
-          status: data.status || 'delivered',
+          status: (data.status || 'delivered') as any,
         };
         
         // Save it locally too
