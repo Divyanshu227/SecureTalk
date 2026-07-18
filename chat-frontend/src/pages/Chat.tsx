@@ -25,9 +25,33 @@ const Chat = () => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [globalSearchResults, setGlobalSearchResults] = useState<User[]>([]);
+  const [isSearchingGlobal, setIsSearchingGlobal] = useState(false);
   const { logout, user } = useAuth();
   const { socket, isConnected } = useSocket();
   const navigate = useNavigate();
+
+  // Debounced global search
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchQuery.trim().length > 0) {
+        setIsSearchingGlobal(true);
+        try {
+          const { searchUsers } = await import("../api/auth");
+          const res = await searchUsers(searchQuery);
+          setGlobalSearchResults(res);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setIsSearchingGlobal(false);
+        }
+      } else {
+        setGlobalSearchResults([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
 
   const loadChats = async () => {
     try {
@@ -168,9 +192,15 @@ const Chat = () => {
     navigate("/login");
   };
 
-  const filteredChats = chats.filter(chat => 
-    chat.otherUser.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    chat.otherUser.username.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredChats = chats.filter(chat => {
+    const query = searchQuery.toLowerCase();
+    const name = chat.otherUser.name?.toLowerCase() || "";
+    const email = chat.otherUser.email?.toLowerCase() || "";
+    return name.includes(query) || email.includes(query);
+  });
+
+  const filteredGlobalUsers = globalSearchResults.filter(u => 
+    !chats.some(c => c.otherUser.id === u.id)
   );
 
   return (
@@ -191,7 +221,7 @@ const Chat = () => {
           <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: "var(--text-tertiary)" }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           <input 
             type="text" 
-            placeholder="Search chats..." 
+            placeholder="Search chats or users..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -201,6 +231,13 @@ const Chat = () => {
           chats={filteredChats}
           activeChat={activeChat}
           onSelect={setActiveChat}
+          searchQuery={searchQuery}
+          globalUsers={filteredGlobalUsers}
+          isSearchingGlobal={isSearchingGlobal}
+          onGlobalUserSelect={(u) => {
+            setSelectedUser(u);
+            setShowProfileModal(true);
+          }}
         />
         
         <div className="user-profile-bottom" onClick={handleLogout}>
