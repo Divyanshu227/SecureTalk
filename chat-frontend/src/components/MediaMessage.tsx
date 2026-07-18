@@ -11,18 +11,23 @@ const MediaMessage = ({ content }: Props) => {
   const [loading, setLoading] = useState(true);
 
   const parts = content.split(":");
-  const url = parts[1];
-  const aesKey = parts[2];
-  const iv = parts[3];
-  const mimeType = parts[4];
-  const filename = parts.slice(5).join(":"); // In case filename has colons
+  let urlIndex = 1;
+  let url = parts[urlIndex];
+  if (url === "http" || url === "https") {
+    url = parts[urlIndex] + ":" + parts[urlIndex + 1];
+    urlIndex++;
+  }
+  const aesKey = parts[urlIndex + 1];
+  const iv = parts[urlIndex + 2];
+  const mimeType = parts[urlIndex + 3];
+  const filename = parts.slice(urlIndex + 4).join(":");
 
   useEffect(() => {
     let objectUrl: string | null = null;
     
     const loadMedia = async () => {
       try {
-        const fullUrl = `http://localhost:5000${url}`;
+        const fullUrl = url.startsWith("http") ? url : `http://localhost:5000${url}`;
         const response = await fetch(fullUrl);
         if (!response.ok) throw new Error("Failed to fetch encrypted media");
         

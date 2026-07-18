@@ -95,21 +95,75 @@ export async function encryptMessage(text: string, publicKeyBase64: string): Pro
   const enc = new TextEncoder();
   const encodedMessage = enc.encode(text);
 
-  const encryptedBuffer = await window.crypto.subtle.encrypt(
-    {
-      name: "RSA-OAEP"
-    },
-    publicKey,
-    encodedMessage
-  );
+  if (encodedMessage.length <= 190) {
+    const encryptedBuffer = await window.crypto.subtle.encrypt(
+      {
+        name: "RSA-OAEP"
+      },
+      publicKey,
+      encodedMessage
+    );
+    return bufferToBase64(encryptedBuffer);
+  } else {
+    // Message too long for RSA-OAEP, use Hybrid Encryption
+    const aesKey = await window.crypto.subtle.generateKey(
+      { name: "AES-GCM", length: 256 },
+      true,
+      ["encrypt", "decrypt"]
+    );
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const aesEncryptedBuffer = await window.crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      aesKey,
+      encodedMessage
+    );
 
-  return bufferToBase64(encryptedBuffer);
+    const rawAesKey = await window.crypto.subtle.exportKey("raw", aesKey);
+    const rsaEncryptedAesKey = await window.crypto.subtle.encrypt(
+      { name: "RSA-OAEP" },
+      publicKey,
+      rawAesKey
+    );
+
+    return "[HYBRID]:" + bufferToBase64(rsaEncryptedAesKey) + ":" + bufferToBase64(iv.buffer) + ":" + bufferToBase64(aesEncryptedBuffer);
+  }
 }
 
 /**
  * Decrypts a Base64 encrypted message using the local Private Key.
  */
 export async function decryptMessage(encryptedBase64: string, privateKey: CryptoKey): Promise<string> {
+  if (encryptedBase64.startsWith("[HYBRID]:")) {
+    const parts = encryptedBase64.split(":");
+    const rsaEncryptedAesKeyBuffer = base64ToBuffer(parts[1]);
+    const ivBuffer = base64ToBuffer(parts[2]);
+    const aesEncryptedBuffer = base64ToBuffer(parts[3]);
+
+    const rawAesKey = await window.crypto.subtle.decrypt(
+      { name: "RSA-OAEP" },
+      privateKey,
+      rsaEncryptedAesKeyBuffer
+    );
+
+    const aesKey = await window.crypto.subtle.importKey(
+      "raw",
+      rawAesKey,
+      "AES-GCM",
+      false,
+      ["decrypt"]
+    );
+
+    const decryptedBuffer = await window.crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: new Uint8Array(ivBuffer) },
+      aesKey,
+      aesEncryptedBuffer
+    );
+
+    const dec = new TextDecoder();
+    return dec.decode(decryptedBuffer);
+  }
+
+  // Legacy pure RSA decryption
   const encryptedBuffer = base64ToBuffer(encryptedBase64);
 
   const decryptedBuffer = await window.crypto.subtle.decrypt(

@@ -750,7 +750,6 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
             ref={fileInputRef}
             style={{ display: "none" }}
             onChange={handleFileSelect}
-            accept="image/*,video/*,audio/*"
           />
           <button 
             className="add-btn" 
