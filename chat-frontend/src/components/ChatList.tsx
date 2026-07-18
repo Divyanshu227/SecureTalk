@@ -34,13 +34,14 @@ const ChatList = ({ chats, activeChat, onSelect }: Props) => {
             <div className="chat-item-content">
               <div className="chat-item-header">
                 <span className="chat-item-name">{chat.otherUser.name}</span>
-                <span className="chat-item-time">11:34 PM</span>
+                <span className="chat-item-time">
+                  {chat.lastMessageTime ? new Date(chat.lastMessageTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ""}
+                </span>
               </div>
               <div className="chat-item-header" style={{ marginBottom: 0 }}>
                 <span className="chat-item-preview">
-                  {chat.lastMessage ?? "hello my name is divyanshu"}
+                  {chat.lastMessage ? (chat.lastMessage.startsWith("[MEDIA]:") ? "📷 Media" : chat.lastMessage) : "Start a conversation"}
                 </span>
-                {index < 3 && <span className="unread-badge">{index + 1}</span>}
               </div>
             </div>
           </div>

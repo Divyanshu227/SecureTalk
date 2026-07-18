@@ -412,6 +412,42 @@ button {
   margin-top: 8px;
 }
 
+/* Empty Chat State */
+.chat-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  gap: 16px;
+  background: transparent;
+}
+.chat-empty-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(139, 61, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-purple);
+  margin-bottom: 8px;
+  box-shadow: 0 0 30px rgba(139, 61, 255, 0.1);
+}
+.chat-empty-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.chat-empty-text {
+  font-size: 1rem;
+  color: var(--text-tertiary);
+  max-width: 300px;
+  text-align: center;
+}
+
 /* Modal overlays (for Search, Profile, Forward etc) */
 .modal-overlay {
   position: fixed;
