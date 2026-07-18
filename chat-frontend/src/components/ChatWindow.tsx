@@ -29,6 +29,15 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, msg: LocalMessage } | null>(null);
+
+  // Close context menu on clicking outside
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, []);
 
   const { user } = useAuth();
   const { socket, isConnected } = useSocket();
@@ -498,7 +507,29 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
                       {chat.otherUser.name?.[0]?.toUpperCase()}
                     </div>
                   )}
-                  <div className="message-bubble">
+                  <div 
+                    className="message-bubble"
+                    onContextMenu={(e) => {
+                      if (isSent) {
+                        e.preventDefault();
+                        setContextMenu({ x: e.clientX, y: e.clientY, msg });
+                      }
+                    }}
+                    onTouchStart={(e) => {
+                      if (isSent) {
+                        const touch = e.touches[0];
+                        pressTimerRef.current = setTimeout(() => {
+                          setContextMenu({ x: touch.clientX, y: touch.clientY, msg });
+                        }, 500);
+                      }
+                    }}
+                    onTouchEnd={() => {
+                      if (pressTimerRef.current) clearTimeout(pressTimerRef.current);
+                    }}
+                    onTouchMove={() => {
+                      if (pressTimerRef.current) clearTimeout(pressTimerRef.current);
+                    }}
+                  >
                     {msg.content.startsWith("[MEDIA]:") ? (
                       <MediaMessage content={msg.content} />
                     ) : (
@@ -516,26 +547,6 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
                       )}
                     </div>
                   </div>
-                  {/* Only show edit/delete buttons for messages sent by current user */}
-                  {isSent && (
-                    <div className="message-actions">
-                      <button
-                        className="secondary"
-                        onClick={() => {
-                          setEditingId(msg.id);
-                          setEditText(msg.content);
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="danger"
-                        onClick={() => handleDelete(msg.id)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
                 </div>
               );
             })}
@@ -618,6 +629,50 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
           </button>
         </div>
       </div>
+
+      {contextMenu && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: contextMenu.y,
+            left: contextMenu.x,
+            background: 'rgba(20, 20, 30, 0.95)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '12px',
+            padding: '6px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
+            zIndex: 1000,
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(10px)',
+            minWidth: '120px'
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="secondary"
+            style={{ padding: '10px 16px', textAlign: 'left', borderRadius: '8px', fontSize: '0.9rem', width: '100%' }}
+            onClick={() => {
+              setEditingId(contextMenu.msg.id);
+              setEditText(contextMenu.msg.content);
+              setContextMenu(null);
+            }}
+          >
+            Edit
+          </button>
+          <button
+            className="danger"
+            style={{ padding: '10px 16px', textAlign: 'left', borderRadius: '8px', fontSize: '0.9rem', color: '#FF6B6B', width: '100%' }}
+            onClick={() => {
+              handleDelete(contextMenu.msg.id);
+              setContextMenu(null);
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      )}
     </>
   );
 };

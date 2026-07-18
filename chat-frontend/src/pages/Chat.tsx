@@ -5,7 +5,7 @@ import { getLocalChats, saveChatsLocally, getLocalMessages, getMyPrivateKey } fr
 import { decryptMessage } from "../utils/crypto";
 import ChatList from "../components/ChatList.tsx";
 import ChatWindow from "../components/ChatWindow.tsx";
-import ThemeToggle from "../components/ThemeToggle";
+
 import { useAuth } from "../auth/AuthContext";
 import { useSocket } from "../contexts/SocketContext";
 import { useNavigate } from "react-router-dom";
@@ -148,7 +148,7 @@ const Chat = () => {
 
       await saveChatsLocally(data);
       setChats(data);
-      setShowNewChatModal(false);
+
       const newChat = data.find(c => c.id === chatId);
       if (newChat) {
         setActiveChat(newChat);
