@@ -33,12 +33,24 @@ A modern, feature-rich, local-first chat application built with React, TypeScrip
 - **View**: See all messages with timestamps
 - **Edited Indicator**: Visual feedback when messages are modified
 
+### 📱 Progressive Web App (PWA)
+- Installable on iOS, Android, and Desktop
+- Custom app icon and native-like full-screen experience
+- Mobile-optimized theme colors and status bar
+
+### 📁 Media & File Sharing
+- Securely share Images, Videos, Audio, and Documents (PDFs, DOCX, etc.)
+- Hybrid AES-RSA encryption ensures media payloads are fully End-to-End Encrypted
+- Cloudinary integration for scalable, cloud-based blob storage with seamless legacy redirects
+
 ### 🎨 Beautiful UI/UX
 - Modern gradient design (Purple theme)
 - Smooth animations and transitions
 - Responsive layout (Desktop, Tablet, Mobile)
 - Dark mode ready CSS
-- Real-time visual feedback
+- Real-time visual feedback with Notification Sounds
+- Real-time Read Receipts (Sent, Delivered, Read Ticks)
+- Local Chat Search (Filter by name or email)
 
 ## 🛠️ Tech Stack
 
@@ -136,6 +148,7 @@ CREATE TABLE messages (
   receiverid INTEGER REFERENCES users(id),
   content TEXT NOT NULL,
   sender_content TEXT,
+  status VARCHAR(20) DEFAULT 'sent',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
@@ -145,7 +158,7 @@ CREATE TABLE messages (
 ```bash
 cd Backend
 npm install
-# Create .env with DATABASE_URL and JWT_SECRET
+# Create .env with DATABASE_URL, JWT_SECRET, and Cloudinary credentials (CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET)
 npm run dev
 ```
 
@@ -189,6 +202,11 @@ Frontend runs on: `http://localhost:5173`
 | PUT | `/chats/:chatId/messages/:messageId` | Edit message |
 | DELETE | `/chats/:chatId/messages/:messageId` | Delete message |
 
+### Media Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/upload` | Upload encrypted blob to Cloudinary |
+
 ## 🔒 Security
 
 - ✅ **True End-to-End Encryption**: Messages never exist in plaintext on the server.
@@ -213,10 +231,9 @@ Frontend runs on: `http://localhost:5173`
 - [x] E2EE Cross-device Synchronization
 - [x] Offline outbox support
 - [ ] Group chats
-- [ ] File/image sharing
-- [ ] Typing indicators
-- [ ] Read receipts
-- [ ] Message search
+- [x] File/image sharing
+- [x] Read receipts
+- [x] Message search
 
 ## 📄 License
 
@@ -224,7 +241,7 @@ This project is open source and available for educational and commercial use.
 
 ---
 
-**Version**: 2.0.1  
+**Version**: 2.1.0  
 **Last Updated**: July 2026  
 **Status**: Production Ready ✅
 
