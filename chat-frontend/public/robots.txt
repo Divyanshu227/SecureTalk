@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /register
+Disallow: /api/
+Disallow: /auth/
+
+Sitemap: https://securetalk.app/sitemap.xml
