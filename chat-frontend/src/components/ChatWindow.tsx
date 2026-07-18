@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import type { Chat, Message } from "../types";
 import {
   fetchMessages,
@@ -12,6 +13,7 @@ import { getLocalMessages, saveMessagesLocally, saveSingleMessageLocally, delete
 import { encryptMessage, decryptMessage, encryptFile } from "../utils/crypto";
 import { uploadFile } from "../api/upload";
 import MediaMessage from "./MediaMessage";
+import ForwardModal from "./ForwardModal";
 
 interface Props {
   chat: Chat | null;
@@ -31,6 +33,8 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, msg: LocalMessage } | null>(null);
+  const [replyingTo, setReplyingTo] = useState<LocalMessage | null>(null);
+  const [forwardingMsg, setForwardingMsg] = useState<LocalMessage | null>(null);
 
   // Close context menu on clicking outside
   useEffect(() => {
@@ -38,6 +42,14 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
   }, []);
+
+  const handleContextMenu = (clientX: number, clientY: number, msg: LocalMessage) => {
+    let x = clientX;
+    let y = clientY;
+    if (window.innerWidth - x < 150) x = window.innerWidth - 160;
+    if (window.innerHeight - y < 250) y = window.innerHeight - 260;
+    setContextMenu({ x, y, msg });
+  };
 
   const { user } = useAuth();
   const { socket, isConnected } = useSocket();
@@ -267,7 +279,14 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
     const textToSend = overrideText || text;
     if (!textToSend.trim() || !chat) return;
 
-    const messageText = textToSend.trim();
+    const messageTextRaw = textToSend.trim();
+    let messageText = messageTextRaw;
+    if (replyingTo) {
+      const preview = replyingTo.content.substring(0, 40).replace(/\n/g, ' ') + (replyingTo.content.length > 40 ? '...' : '');
+      messageText = `[REPLY:${replyingTo.id}:${preview}]:${messageTextRaw}`;
+      setReplyingTo(null);
+    }
+    
     if (!overrideText) setText("");
 
     try {
@@ -428,6 +447,30 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
     }
   };
 
+  const handleForward = async (targetChat: Chat) => {
+    if (!forwardingMsg) return;
+    setUploading(true);
+    try {
+      let finalContentToSend = forwardingMsg.content;
+      let senderContentToSend: string | undefined;
+      if (targetChat.otherUser.public_key) {
+         finalContentToSend = await encryptMessage(forwardingMsg.content, targetChat.otherUser.public_key);
+      }
+      if (user?.public_key) {
+        senderContentToSend = await encryptMessage(forwardingMsg.content, user.public_key);
+      }
+      const newMsg = await sendMessage(targetChat.id, finalContentToSend, senderContentToSend);
+      const localSyncedMsg = { ...newMsg, content: forwardingMsg.content };
+      await saveSingleMessageLocally(targetChat.id, localSyncedMsg, 'synced');
+    } catch (err) {
+      console.error(err);
+      alert("Failed to forward message");
+    } finally {
+      setUploading(false);
+      setForwardingMsg(null);
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -500,6 +543,23 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
 
               // Render message with appropriate styling
               // CSS class "sent" positions on right, "received" positions on left
+              
+              let displayContent = msg.content;
+              let replyBlock = null;
+              if (displayContent.startsWith("[REPLY:")) {
+                const match = displayContent.match(/^\[REPLY:(\d+):(.*?)\]:(.*)$/s);
+                if (match) {
+                  const [, , preview, actualContent] = match;
+                  displayContent = actualContent;
+                  replyBlock = (
+                    <div className="reply-preview-block" style={{ background: 'rgba(0,0,0,0.2)', padding: '6px 10px', borderRadius: '8px', marginBottom: '8px', fontSize: '0.85rem', borderLeft: '3px solid var(--accent-purple)' }}>
+                      <div style={{ color: 'var(--accent-blue)', fontWeight: 600, marginBottom: '2px', fontSize: '0.75rem' }}>Replied Message</div>
+                      <div style={{ opacity: 0.8 }}>{preview}</div>
+                    </div>
+                  );
+                }
+              }
+
               return (
                 <div key={msg.id} className={`message-wrapper ${isSent ? "sent" : "received"}`}>
                   {!isSent && (
@@ -510,18 +570,14 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
                   <div 
                     className="message-bubble"
                     onContextMenu={(e) => {
-                      if (isSent) {
-                        e.preventDefault();
-                        setContextMenu({ x: e.clientX, y: e.clientY, msg });
-                      }
+                      e.preventDefault();
+                      handleContextMenu(e.clientX, e.clientY, msg);
                     }}
                     onTouchStart={(e) => {
-                      if (isSent) {
-                        const touch = e.touches[0];
-                        pressTimerRef.current = setTimeout(() => {
-                          setContextMenu({ x: touch.clientX, y: touch.clientY, msg });
-                        }, 500);
-                      }
+                      const touch = e.touches[0];
+                      pressTimerRef.current = setTimeout(() => {
+                        handleContextMenu(touch.clientX, touch.clientY, msg);
+                      }, 500);
                     }}
                     onTouchEnd={() => {
                       if (pressTimerRef.current) clearTimeout(pressTimerRef.current);
@@ -530,10 +586,11 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
                       if (pressTimerRef.current) clearTimeout(pressTimerRef.current);
                     }}
                   >
-                    {msg.content.startsWith("[MEDIA]:") ? (
-                      <MediaMessage content={msg.content} />
+                    {replyBlock}
+                    {displayContent.startsWith("[MEDIA]:") ? (
+                      <MediaMessage content={displayContent} />
                     ) : (
-                      msg.content
+                      displayContent
                     )}
                     {msg.syncStatus === 'pending' && <span style={{fontSize: '0.8em', marginLeft: '5px'}}>⏳</span>}
                     <div className="message-time-inline">
@@ -593,8 +650,21 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
         </>
       )}
 
-      <div className="chat-input-wrapper">
-        <div className="chat-input-container">
+      <div className="chat-input-wrapper" style={{ position: 'relative' }}>
+        {replyingTo && (
+          <div className="replying-to-banner" style={{ position: 'absolute', top: '-40px', left: '24px', right: '24px', background: 'rgba(20, 20, 30, 0.9)', backdropFilter: 'blur(10px)', padding: '10px 16px', borderRadius: '12px 12px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid var(--border-color)', borderBottom: 'none', borderLeft: '3px solid var(--accent-purple)' }}>
+            <div style={{ overflow: 'hidden' }}>
+              <div style={{ color: 'var(--accent-blue)', fontSize: '0.75rem', fontWeight: 600, marginBottom: '2px' }}>Replying to message</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {replyingTo.content.startsWith("[MEDIA]:") ? "Media message" : replyingTo.content}
+              </div>
+            </div>
+            <button className="icon-btn" onClick={() => setReplyingTo(null)} style={{ padding: '4px' }}>
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+        )}
+        <div className="chat-input-container" style={replyingTo ? { borderRadius: '0 0 30px 30px' } : {}}>
           <input
             type="file"
             ref={fileInputRef}
@@ -630,7 +700,7 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
         </div>
       </div>
 
-      {contextMenu && (
+      {contextMenu && createPortal(
         <div 
           style={{
             position: 'fixed',
@@ -654,24 +724,67 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
             className="secondary"
             style={{ padding: '10px 16px', textAlign: 'left', borderRadius: '8px', fontSize: '0.9rem', width: '100%' }}
             onClick={() => {
-              setEditingId(contextMenu.msg.id);
-              setEditText(contextMenu.msg.content);
+              setReplyingTo(contextMenu.msg);
               setContextMenu(null);
             }}
           >
-            Edit
+            Reply
           </button>
           <button
-            className="danger"
-            style={{ padding: '10px 16px', textAlign: 'left', borderRadius: '8px', fontSize: '0.9rem', color: '#FF6B6B', width: '100%' }}
+            className="secondary"
+            style={{ padding: '10px 16px', textAlign: 'left', borderRadius: '8px', fontSize: '0.9rem', width: '100%' }}
             onClick={() => {
-              handleDelete(contextMenu.msg.id);
+              navigator.clipboard.writeText(contextMenu.msg.content.replace(/^\[REPLY:\d+:.*?\]:/s, ''));
               setContextMenu(null);
             }}
           >
-            Delete
+            Copy
           </button>
-        </div>
+          <button
+            className="secondary"
+            style={{ padding: '10px 16px', textAlign: 'left', borderRadius: '8px', fontSize: '0.9rem', width: '100%' }}
+            onClick={() => {
+              setForwardingMsg(contextMenu.msg);
+              setContextMenu(null);
+            }}
+          >
+            Forward
+          </button>
+          {/* Only allow edit and delete for our own messages */}
+          {(contextMenu.msg.issent ?? Number(contextMenu.msg.senderId) === Number(user?.id)) && (
+            <>
+              <button
+                className="secondary"
+                style={{ padding: '10px 16px', textAlign: 'left', borderRadius: '8px', fontSize: '0.9rem', width: '100%' }}
+                onClick={() => {
+                  setEditingId(contextMenu.msg.id);
+                  setEditText(contextMenu.msg.content.replace(/^\[REPLY:\d+:.*?\]:/s, ''));
+                  setContextMenu(null);
+                }}
+              >
+                Edit
+              </button>
+              <button
+                className="danger"
+                style={{ padding: '10px 16px', textAlign: 'left', borderRadius: '8px', fontSize: '0.9rem', color: '#FF6B6B', width: '100%' }}
+                onClick={() => {
+                  handleDelete(contextMenu.msg.id);
+                  setContextMenu(null);
+                }}
+              >
+                Delete
+              </button>
+            </>
+          )}
+        </div>,
+        document.body
+      )}
+
+      {forwardingMsg && (
+        <ForwardModal 
+          onClose={() => setForwardingMsg(null)}
+          onForward={handleForward}
+        />
       )}
     </>
   );
