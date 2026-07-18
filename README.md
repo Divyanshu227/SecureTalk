@@ -496,8 +496,8 @@ Thank you for using this chat application. We hope you enjoy the experience and 
 
 ---
 
-**Version**: 1.0.0  
-**Last Updated**: February 2026  
+**Version**: 2.0.1  
+**Last Updated**: July 2026  
 **Status**: Production Ready ✅
 
 Start chatting now! 💬
