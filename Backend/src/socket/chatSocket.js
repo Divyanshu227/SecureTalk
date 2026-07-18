@@ -74,6 +74,17 @@ export const initChatSocket = (io) => {
       }
     });
 
+    socket.on("message_deleted", (data) => {
+      try {
+        const { chatId, messageId } = data;
+        if (!chatId || !messageId) return;
+
+        io.to(String(chatId)).emit("receive_message_delete", { messageId, chatId });
+      } catch (err) {
+        console.error("MESSAGE DELETE ERROR:", err.message);
+      }
+    });
+
     socket.on("send_message", (data) => {
       // Legacy support - can be removed once frontend fully uses message_persisted
       try {

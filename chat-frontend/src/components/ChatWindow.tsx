@@ -302,15 +302,27 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
         }
         return msg;
       }));
-    });
+    };
+
+    const handleMessageDelete = async (data: { messageId: number; chatId: number }) => {
+      if (Number(data.chatId) !== Number(chat.id)) return;
+      await deleteMessageLocally(data.messageId);
+      setMessages((prev) => prev.filter((msg) => msg.id !== data.messageId));
+    };
+
+    socket.on("receive_message", handleReceiveMessage);
+    socket.on("message_status_update", handleMessageStatusUpdate);
+    socket.on("messages_status_update", handleMessagesStatusUpdate);
+    socket.on("receive_message_delete", handleMessageDelete);
 
     // Mark chat as read when opening
     socket.emit("mark_chat_read", chat.id);
 
     return () => {
       socket.off("receive_message", handleReceiveMessage);
-      socket.off("message_status_update");
-      socket.off("messages_status_update");
+      socket.off("message_status_update", handleMessageStatusUpdate);
+      socket.off("messages_status_update", handleMessagesStatusUpdate);
+      socket.off("receive_message_delete", handleMessageDelete);
       if (isConnected) {
         socket.emit("leave_chat", String(chat.id));
       }
@@ -450,6 +462,11 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
       try {
         // Delete from server
         await deleteMessage(chat.id, messageId);
+
+        // Notify receiver to delete locally
+        if (socket && isConnected) {
+          socket.emit("message_deleted", { chatId: chat.id, messageId });
+        }
       } catch (err: unknown) {
         // If it's 404 (already deleted from server), ignore the error
         const e = err as { response?: { status?: number } };
