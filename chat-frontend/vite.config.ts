@@ -23,6 +23,7 @@ export default defineConfig({
         background_color: '#1a1d24',
         display: 'standalone',
         orientation: 'portrait',
+        icons: [
           {
             src: '/icon-192x192.png',
             sizes: '192x192',
