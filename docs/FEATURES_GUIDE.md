@@ -447,6 +447,25 @@ button.danger
 
 ---
 
+## 🔐 Advanced Security & Privacy
+
+### End-to-End Encryption (E2EE)
+- **Local Key Generation**: RSA-OAEP keys are generated directly in your browser.
+- **Client-Side Encryption**: Messages are encrypted *before* they leave your device. Only you and the recipient can read them.
+- **Cross-Device Sync**: Your private key is encrypted with AES-GCM (using a PBKDF2 hash of your password) and stored securely on the server so you can access your chats from any device.
+
+### 📶 Offline-First Capabilities
+
+- **IndexedDB (Dexie.js)**: Chats and messages are persisted locally, allowing you to view your chat history instantly without a network connection.
+- **Offline Message Queuing**: Send messages while offline. They are placed in a secure outbox and automatically transmitted once the connection is restored.
+
+### 📁 Media Sharing
+
+- **Encrypted Media**: Images, videos, and documents (PDF, DOCX) are encrypted using a hybrid AES-RSA strategy before upload.
+- **Cloudinary Storage**: Scalable media blob storage ensuring rapid delivery without compromising on E2EE.
+
+---
+
 ## 📝 Notes
 
 - All timestamps use browser's local timezone
@@ -461,12 +480,12 @@ button.danger
 
 This chat application provides a **complete, production-ready foundation** with:
 - ✅ Secure authentication
-- ✅ Real-time messaging
+- ✅ Real-time messaging (Socket.io)
+- ✅ End-to-End Encryption (E2EE)
+- ✅ Offline-First Queuing (Dexie.js)
+- ✅ Media & File Sharing (Cloudinary)
+- ✅ Push Notifications (Web-Push)
 - ✅ Message management (CRUD)
 - ✅ Professional UI/UX
-- ✅ Responsive design
-- ✅ Error handling
+- ✅ Responsive design (PWA)
 - ✅ Database persistence
-- ✅ User-friendly features
-
-**Ready to extend with**: Socket.io, Groups, Files, Notifications, and more!
