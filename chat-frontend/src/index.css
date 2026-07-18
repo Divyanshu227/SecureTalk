@@ -304,14 +304,18 @@ button {
 }
 
 .chat-header {
-  height: 72px;
-  padding: 10px 16px;
+  height: 66px;
+  padding: 8px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--bg-header);
-  border-bottom: 1px solid var(--border-color);
+  background: rgba(15, 17, 21, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid #20242D;
   flex-shrink: 0;
+  position: relative;
+  z-index: 100;
 }
 
 .chat-header-user {

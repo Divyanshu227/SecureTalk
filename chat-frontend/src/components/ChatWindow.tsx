@@ -46,10 +46,14 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, msg: LocalMessage } | null>(null);
   const [replyingTo, setReplyingTo] = useState<LocalMessage | null>(null);
   const [forwardingMsg, setForwardingMsg] = useState<LocalMessage | null>(null);
+  const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
 
-  // Close context menu on clicking outside
+  // Close menus on clicking outside
   useEffect(() => {
-    const handleClick = () => setContextMenu(null);
+    const handleClick = () => {
+      setContextMenu(null);
+      setIsHeaderMenuOpen(false);
+    };
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
   }, []);
@@ -574,37 +578,88 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
       <div className="chat-header">
         <div className="chat-header-user">
           {onBack && (
-            <button className="icon-btn show-mobile-only" onClick={onBack} title="Back" style={{ marginRight: "8px" }}>
-              <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            <button className="icon-btn" title="Back" style={{ marginRight: "4px", padding: "4px" }} onClick={onBack}>
+              <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             </button>
           )}
-          <button className="icon-btn" title="Back" style={{ marginRight: "8px" }} onClick={onBack || (() => {})}>
-            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-          </button>
           <div style={{ position: "relative" }}>
-            <div className="user-avatar" style={{ background: "linear-gradient(135deg, #FF6B6B, #8B5CF6)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", width: "48px", height: "48px", fontSize: "18px", flexShrink: 0 }}>
+            <div className="user-avatar" style={{ background: "linear-gradient(135deg, #FF6B6B, #8B5CF6)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", width: "40px", height: "40px", fontSize: "16px", flexShrink: 0, borderRadius: "50%" }}>
               {chat.otherUser.name?.[0]?.toUpperCase()}
             </div>
-            {isOnline && <div className="online-indicator"></div>}
+            {isOnline && <div className="online-indicator" style={{ width: "10px", height: "10px", border: "2px solid #0F1115" }}></div>}
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "2px", overflow: "hidden", flex: 1 }}>
-            <div style={{ fontWeight: 600, fontSize: "18px", display: "flex", alignItems: "center", gap: "4px" }}>
+          <div style={{ display: "flex", flexDirection: "column", overflow: "hidden", flex: 1, paddingLeft: "4px" }}>
+            <div style={{ fontWeight: 600, fontSize: "16px", display: "flex", alignItems: "center", gap: "6px" }}>
               <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{chat.otherUser.name}</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--accent-blue)" style={{ flexShrink: 0 }}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+              {/* Fake Verified Badge */}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, paddingBottom: "1px" }}><path d="M20 6L9 17l-5-5" /></svg>
             </div>
-            <div style={{ fontSize: "13px", color: "var(--text-secondary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{statusText}</div>
-            <div style={{ fontSize: "13px", color: "var(--success-green)", display: "flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap" }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>
-              <span>End-to-end encrypted</span>
-            </div>
+            <div style={{ fontSize: "12px", color: "#9CA3AF", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginTop: "2px" }}>{statusText}</div>
           </div>
         </div>
         
-        <div className="chat-header-actions">
-          <button className="icon-btn" title="Voice Call"><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg></button>
-          <button className="icon-btn" title="Video Call"><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button>
-          <button className="icon-btn" title="Search in Chat"><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
-          <button className="icon-btn" title="More Options"><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" /></svg></button>
+        <div className="chat-header-actions" style={{ position: "relative" }}>
+          <button 
+            className="icon-btn" 
+            title="More Options" 
+            onClick={(e) => { e.stopPropagation(); setIsHeaderMenuOpen(!isHeaderMenuOpen); }}
+          >
+            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" /></svg>
+          </button>
+          
+          {isHeaderMenuOpen && (
+            <div 
+              style={{
+                position: 'absolute',
+                top: '100%',
+                right: '0',
+                marginTop: '8px',
+                background: '#1A1C23',
+                border: '1px solid #2A2D36',
+                borderRadius: '12px',
+                padding: '8px 0',
+                display: 'flex',
+                flexDirection: 'column',
+                minWidth: '220px',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                zIndex: 200,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {[
+                { label: 'Voice Call', icon: 'M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z' },
+                { label: 'Video Call', icon: 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z' },
+                { label: 'Search in Conversation', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' },
+                { label: 'View Profile', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
+                { label: 'Mute Notifications', icon: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
+                { label: 'Media & Files', icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
+                { label: 'Wallpaper', icon: 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12' },
+                { label: 'Clear Chat', icon: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16' },
+                { label: 'Delete Chat', icon: 'M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6' },
+              ].map((item, i) => (
+                <button
+                  key={i}
+                  className="secondary"
+                  style={{ 
+                    padding: '12px 20px', 
+                    textAlign: 'left', 
+                    fontSize: '15px', 
+                    width: '100%', 
+                    background: 'transparent',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    color: item.label === 'Clear Chat' || item.label === 'Delete Chat' ? '#EF4444' : '#E5E7EB'
+                  }}
+                  onClick={() => setIsHeaderMenuOpen(false)}
+                >
+                  <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} /></svg>
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
