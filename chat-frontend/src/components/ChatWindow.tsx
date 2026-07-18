@@ -677,7 +677,7 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
                     {displayContent.startsWith("[MEDIA]:") ? (
                       <MediaMessage content={displayContent} />
                     ) : (
-                      displayContent
+                      <div className="message-content-text">{displayContent}</div>
                     )}
                     <div className="message-time-inline">
                       {new Date(msg.created_at || "").toLocaleTimeString("en-IN", {
