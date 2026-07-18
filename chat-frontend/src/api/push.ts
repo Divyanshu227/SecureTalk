@@ -1,4 +1,4 @@
-import api from './auth';
+import api from './axios';
 
 export const subscribeToPush = async (subscription: PushSubscription) => {
   const response = await api.post('/push/subscribe', subscription);

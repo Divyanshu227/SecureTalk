@@ -7,7 +7,6 @@ declare const self: ServiceWorkerGlobalScope;
 self.skipWaiting();
 clientsClaim();
 
-// @ts-expect-error __WB_MANIFEST is injected by workbox
 precacheAndRoute(self.__WB_MANIFEST);
 
 self.addEventListener('push', (event) => {
