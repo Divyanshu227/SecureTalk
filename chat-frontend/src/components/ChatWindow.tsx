@@ -274,9 +274,7 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
       processIncomingMessage();
     };
 
-    socket.on("receive_message", handleReceiveMessage);
-    
-    socket.on("message_status_update", (data: { messageId?: number, messageIds?: number[], chatId: number, status: string }) => {
+    const handleMessageStatusUpdate = (data: { messageId?: number, messageIds?: number[], chatId: number, status: string }) => {
       if (Number(data.chatId) !== Number(chat.id)) return;
       
       setMessages(prev => prev.map(msg => {
@@ -290,9 +288,9 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
         }
         return msg;
       }));
-    });
+    };
 
-    socket.on("messages_status_update", (data: { messageIds: number[], chatId: number, status: string }) => {
+    const handleMessagesStatusUpdate = (data: { messageIds: number[], chatId: number, status: string }) => {
       if (Number(data.chatId) !== Number(chat.id)) return;
       
       setMessages(prev => prev.map(msg => {
