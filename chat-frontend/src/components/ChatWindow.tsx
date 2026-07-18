@@ -587,12 +587,16 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
             </div>
             {isOnline && <div className="online-indicator"></div>}
           </div>
-          <div>
-            <div style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: "4px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+            <div style={{ fontWeight: 600, fontSize: "16px", display: "flex", alignItems: "center", gap: "4px" }}>
               {chat.otherUser.name}
               <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--accent-blue)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
             </div>
-            <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>{statusText}</div>
+            <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>{statusText}</div>
+            <div style={{ fontSize: "12px", color: "var(--success-green)", display: "flex", alignItems: "center", gap: "4px" }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>
+              End-to-end encrypted
+            </div>
           </div>
         </div>
         
