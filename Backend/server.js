@@ -20,7 +20,11 @@ io.on("connection", (socket) => {
     // socket disconnected
   });
 });
-server.listen(process.env.PORT || 5000, "0.0.0.0", () => {
-  // Server started
-  console.log(`Server running on port ${process.env.PORT || 5000}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  server.listen(process.env.PORT || 5000, "0.0.0.0", () => {
+    // Server started
+    console.log(`Server running on port ${process.env.PORT || 5000}`);
+  });
+}
+
+export default server;
