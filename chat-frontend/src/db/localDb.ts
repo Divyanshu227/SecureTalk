@@ -83,6 +83,14 @@ export const saveSingleMessageLocally = async (chatId: number, message: Message,
   return localMsg;
 };
 
+export const updateMessageStatusLocally = async (messageId: number, status: 'sending' | 'sent' | 'delivered' | 'read') => {
+  const msg = await localDb.messages.get(messageId);
+  if (msg) {
+    msg.status = status;
+    await localDb.messages.put(msg);
+  }
+};
+
 export const deleteMessageLocally = async (messageId: number) => {
   await localDb.messages.delete(messageId);
 };

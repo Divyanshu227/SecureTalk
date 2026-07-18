@@ -9,7 +9,18 @@ import {
 } from "../api/message";
 import { useAuth } from "../auth/AuthContext";
 import { useSocket } from "../contexts/SocketContext";
-import { getLocalMessages, saveMessagesLocally, saveSingleMessageLocally, deleteMessageLocally, type LocalMessage, getMyPrivateKey, addToOutbox, getOutboxForChat, removeFromOutbox } from "../db/localDb";
+import { 
+  getLocalMessages, 
+  saveMessagesLocally, 
+  saveSingleMessageLocally, 
+  deleteMessageLocally, 
+  type LocalMessage, 
+  getMyPrivateKey, 
+  addToOutbox, 
+  getOutboxForChat, 
+  removeFromOutbox,
+  updateMessageStatusLocally
+} from "../db/localDb";
 import { encryptMessage, decryptMessage, encryptFile } from "../utils/crypto";
 import { uploadFile } from "../api/upload";
 import MediaMessage from "./MediaMessage";
@@ -148,7 +159,7 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
         if (isMyMessage) {
            // First try local plaintext copy
            const localMsg = localMsgs?.find(m => m.id === msg.id);
-           if (localMsg) return localMsg;
+           if (localMsg) return { ...localMsg, status: msg.status || localMsg.status };
            // Then try decrypting senderContent (self-encrypted copy)
            if (privateKey && msg.senderContent) {
              try {
@@ -269,9 +280,11 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
       
       setMessages(prev => prev.map(msg => {
         if (data.messageId && msg.id === data.messageId) {
+          updateMessageStatusLocally(data.messageId, data.status as any).catch(console.error);
           return { ...msg, status: data.status as any };
         }
         if (data.messageIds && data.messageIds.includes(msg.id)) {
+          updateMessageStatusLocally(msg.id, data.status as any).catch(console.error);
           return { ...msg, status: data.status as any };
         }
         return msg;
@@ -283,6 +296,7 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
       
       setMessages(prev => prev.map(msg => {
         if (data.messageIds.includes(msg.id)) {
+          updateMessageStatusLocally(msg.id, data.status as any).catch(console.error);
           return { ...msg, status: data.status as any };
         }
         return msg;
