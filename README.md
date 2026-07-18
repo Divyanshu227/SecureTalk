@@ -224,7 +224,7 @@ This project is open source and available for educational and commercial use.
 
 ---
 
-**Version**: 1.1.0  
+**Version**: 2.0.1  
 **Last Updated**: July 2026  
 **Status**: Production Ready ✅
 
