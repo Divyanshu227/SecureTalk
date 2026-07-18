@@ -1,4 +1,12 @@
 import pool from "../config/db.js";
+import webpush from "web-push";
+
+webpush.setVapidDetails(
+  "mailto:test@securetalk.app",
+  process.env.VAPID_PUBLIC_KEY,
+  process.env.VAPID_PRIVATE_KEY
+);
+
 // This is used for sending, fetching, editing, and deleting messages.
 export const sendMessage = async (req, res) => {
   const { chatId } = req.params;
@@ -29,6 +37,38 @@ export const sendMessage = async (req, res) => {
     );
 
     const inserted = insertRes.rows[0];
+
+    // Fetch push subscriptions for the receiver
+    try {
+      const subsRes = await pool.query("SELECT endpoint, auth, p256dh FROM push_subscriptions WHERE user_id = $1", [receiverId]);
+      
+      const payload = JSON.stringify({
+        title: "New Message",
+        body: "You have received a new secure message.",
+        icon: "/icon-192x192.png",
+        data: { chatId }
+      });
+
+      subsRes.rows.forEach(sub => {
+        const pushSubscription = {
+          endpoint: sub.endpoint,
+          keys: {
+            auth: sub.auth,
+            p256dh: sub.p256dh
+          }
+        };
+        webpush.sendNotification(pushSubscription, payload).catch(err => {
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            // Subscription expired or invalid, remove from DB
+            pool.query("DELETE FROM push_subscriptions WHERE endpoint = $1", [sub.endpoint]).catch(console.error);
+          } else {
+            console.error("Push notification error:", err);
+          }
+        });
+      });
+    } catch (pushErr) {
+      console.error("Failed to process push notifications:", pushErr);
+    }
 
     // Build response using known variables (avoid relying on DB camelCase aliases)
     res.json({

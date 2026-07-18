@@ -9,6 +9,7 @@ import ChatWindow from "../components/ChatWindow.tsx";
 import { useAuth } from "../auth/AuthContext";
 import { useSocket } from "../contexts/SocketContext";
 import { useNavigate } from "react-router-dom";
+import { usePushNotifications } from "../hooks/usePushNotifications";
 import SearchModal from "../components/SearchModal";
 import ProfileModal from "../components/ProfileModal";
 import InboxModal from "../components/InboxModal";
@@ -30,6 +31,8 @@ const Chat = () => {
   const { logout, user } = useAuth();
   const { socket, isConnected } = useSocket();
   const navigate = useNavigate();
+  
+  usePushNotifications();
 
   // Debounced global search
   useEffect(() => {
