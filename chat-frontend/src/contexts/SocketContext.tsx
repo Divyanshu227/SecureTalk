@@ -6,6 +6,7 @@ import { useAuth } from "../auth/AuthContext";
 interface SocketContextType {
   socket: Socket | null;
   isConnected: boolean;
+  userStatuses: Record<number, { isOnline: boolean, last_seen?: string | null }>;
 }
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
@@ -13,6 +14,7 @@ const SocketContext = createContext<SocketContextType | undefined>(undefined);
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [userStatuses, setUserStatuses] = useState<Record<number, { isOnline: boolean, last_seen?: string | null }>>({});
   const { token } = useAuth();
   const socketRef = useRef<Socket | null>(null);
 
@@ -49,6 +51,22 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     newSocket.on("connect", () => {
       console.log("✅ Socket connected:", newSocket.id);
       setIsConnected(true);
+      
+      // Fetch initial online status list
+      newSocket.emit("get_initial_status", (onlineUsers: number[]) => {
+        const statuses: Record<number, { isOnline: boolean }> = {};
+        onlineUsers.forEach(id => {
+          statuses[id] = { isOnline: true };
+        });
+        setUserStatuses(prev => ({ ...prev, ...statuses }));
+      });
+    });
+
+    newSocket.on("user_status", (data: { userId: number, isOnline: boolean, last_seen?: string }) => {
+      setUserStatuses(prev => ({
+        ...prev,
+        [data.userId]: { isOnline: data.isOnline, last_seen: data.last_seen }
+      }));
     });
 
     newSocket.on("disconnect", (reason) => {
@@ -80,7 +98,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
   }, [token]);
 
   return (
-    <SocketContext.Provider value={{ socket, isConnected }}>
+    <SocketContext.Provider value={{ socket, isConnected, userStatuses }}>
       {children}
     </SocketContext.Provider>
   );

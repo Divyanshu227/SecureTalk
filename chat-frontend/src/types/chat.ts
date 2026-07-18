@@ -7,5 +7,7 @@ export interface Chat {
     name: string;
     email: string;
     public_key?: string;
+    last_seen?: string | null;
+    isOnline?: boolean;
   };
 }

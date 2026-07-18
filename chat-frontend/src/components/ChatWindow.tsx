@@ -52,7 +52,7 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
   };
 
   const { user } = useAuth();
-  const { socket, isConnected } = useSocket();
+  const { socket, isConnected, userStatuses } = useSocket();
 
   // Drain outbox when connectivity is restored
   useEffect(() => {
@@ -482,6 +482,26 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
     return <div className="chat-empty">Select a chat to start messaging</div>;
   }
 
+  // Compute online status
+  const otherUserStatus = userStatuses ? userStatuses[chat.otherUser.id] : undefined;
+  const isOnline = otherUserStatus ? otherUserStatus.isOnline : chat.otherUser.isOnline;
+  const lastSeenStr = otherUserStatus ? otherUserStatus.last_seen : chat.otherUser.last_seen;
+  
+  let statusText = "Offline";
+  if (isOnline) {
+    statusText = "Online";
+  } else if (lastSeenStr) {
+    const lastSeenDate = new Date(lastSeenStr);
+    const today = new Date();
+    const isToday = lastSeenDate.getDate() === today.getDate() && lastSeenDate.getMonth() === today.getMonth() && lastSeenDate.getFullYear() === today.getFullYear();
+    
+    if (isToday) {
+      statusText = `Last seen today at ${lastSeenDate.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`;
+    } else {
+      statusText = `Last seen on ${lastSeenDate.toLocaleDateString("en-IN")} at ${lastSeenDate.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`;
+    }
+  }
+
   return (
     <>
       <div className="chat-header">
@@ -498,14 +518,14 @@ const ChatWindow = ({ chat, onMessageSent, onBack }: Props) => {
             <div className="user-avatar" style={{ background: "linear-gradient(135deg, #FF6B6B, #8B3DFF)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", width: "40px", height: "40px", fontSize: "1.2rem" }}>
               {chat.otherUser.name?.[0]?.toUpperCase()}
             </div>
-            <div className="online-indicator"></div>
+            {isOnline && <div className="online-indicator"></div>}
           </div>
           <div>
             <div style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: "4px" }}>
               {chat.otherUser.name}
               <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--accent-blue)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
             </div>
-            <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Online</div>
+            <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>{statusText}</div>
           </div>
         </div>
         

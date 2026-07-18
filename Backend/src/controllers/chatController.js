@@ -1,4 +1,6 @@
 import pool from "../config/db.js";
+import { onlineUsers } from "../socket/chatSocket.js";
+
 // This is used for creating chats and fetching chat data.
 export const createChat = async (req, res) => {
   const { otherUserId } = req.body;
@@ -60,7 +62,8 @@ export const getChats = async (req, res) => {
     u.name as other_user_name,
     u.username as other_user_username,
     u.email as other_user_email,
-    u.public_key as other_user_public_key
+    u.public_key as other_user_public_key,
+    u.last_seen as other_user_last_seen
     from chat c
     join users u on (c.userid1 = u.id and c.userid2 = $1) or (c.userid2 = u.id and c.userid1 = $1)
     where c.userid1 = $1 or c.userid2 = $1
@@ -93,7 +96,9 @@ export const getChats = async (req, res) => {
       name: row.other_user_name,
       username: row.other_user_username,
       email: row.other_user_email,
-      public_key: row.other_user_public_key
+      public_key: row.other_user_public_key,
+      last_seen: row.other_user_last_seen,
+      isOnline: onlineUsers.has(row.other_user_id)
     }
   }));
 

@@ -1,6 +1,8 @@
 import pool from "../config/db.js";
 import jwt from "jsonwebtoken";
 
+export const onlineUsers = new Map();
+
 export const initChatSocket = (io) => {
   io.use((socket, next) => {
     try {
@@ -21,6 +23,22 @@ export const initChatSocket = (io) => {
 
   io.on("connection", (socket) => {
     // socket connected
+    const userId = socket.user.id;
+    
+    // Add to online users
+    onlineUsers.set(userId, socket.id);
+    console.log(`User ${userId} connected. Total online: ${onlineUsers.size}`);
+    
+    // Broadcast status to all connected clients
+    io.emit("user_status", { userId, isOnline: true });
+
+    // When a user connects, they might want to know who is online right now
+    socket.on("get_initial_status", (callback) => {
+      // Return array of online user IDs
+      if (typeof callback === "function") {
+        callback(Array.from(onlineUsers.keys()));
+      }
+    });
 
     socket.on("join_chat", (chatId) => {
       const roomId = String(chatId);
@@ -81,8 +99,25 @@ export const initChatSocket = (io) => {
       console.error("❌ CLIENT ERROR FROM USER", socket.user?.id, ":", data);
     });
 
-    socket.on("disconnect", () => {
+    socket.on("client_error", (data) => {
+      console.error("❌ CLIENT ERROR FROM USER", socket.user?.id, ":", data);
+    });
+
+    socket.on("disconnect", async () => {
       // socket disconnected
+      const userId = socket.user.id;
+      onlineUsers.delete(userId);
+      console.log(`User ${userId} disconnected. Total online: ${onlineUsers.size}`);
+      
+      const lastSeen = new Date();
+      
+      try {
+        await pool.query("UPDATE users SET last_seen = $1 WHERE id = $2", [lastSeen, userId]);
+      } catch (err) {
+        console.error("Failed to update last_seen for user", userId, err);
+      }
+      
+      io.emit("user_status", { userId, isOnline: false, last_seen: lastSeen.toISOString() });
     });
 
     socket.on("leave_chat", (chatId) => {
